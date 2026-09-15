@@ -438,8 +438,6 @@
   .donut-row{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
   .donut-wrap{ position:relative; width:168px; height:168px; flex:none; }
   .donut-wrap svg{ width:100%; height:100%; }
-  .donut-seg{ transition:opacity .12s ease; cursor:pointer; }
-  .donut-seg.dim{ opacity:0.35; }
   .donut-center{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; pointer-events:none;
@@ -447,9 +445,7 @@
   .donut-center .num{ font-size:19px; font-weight:800; font-family:"Plus Jakarta Sans",sans-serif; }
   .donut-center .lbl{ font-size:10.5px; color:var(--text-muted); font-weight:600; }
   .legend{ display:flex; flex-direction:column; gap:9px; flex:1; min-width:150px; }
-  .legend-row{ display:flex; align-items:center; gap:9px; font-size:12.5px; border-radius:8px; padding:3px 4px; cursor:pointer; }
-  .legend-row:hover, .legend-row.active{ background:var(--surface-alt); }
-  .legend-row.dim{ opacity:0.45; }
+  .legend-row{ display:flex; align-items:center; gap:9px; font-size:12.5px; border-radius:8px; padding:3px 4px; }
   .legend-dot{ width:9px; height:9px; border-radius:999px; flex:none; }
   .legend-label{ color:var(--text-secondary); font-weight:600; flex:1; }
   .legend-pct{ font-weight:700; color:var(--text-primary); }
@@ -1360,26 +1356,9 @@
         }).join('') +
       '</div>';
 
-    const rows = container.querySelectorAll('.legend-row');
     const segs = container.querySelectorAll('.donut-seg');
-    function setActive(key){
-      rows.forEach(function(row){
-        const isMatch = row.getAttribute('data-key') === key;
-        row.classList.toggle('active', !!key && isMatch);
-        row.classList.toggle('dim', !!key && !isMatch);
-      });
-      segs.forEach(function(seg){
-        const isMatch = seg.getAttribute('data-key') === key;
-        seg.classList.toggle('dim', !!key && !isMatch);
-      });
-    }
-    rows.forEach(function(row){
-      row.addEventListener('mouseenter', function(){ setActive(row.getAttribute('data-key')); });
-      row.addEventListener('mouseleave', function(){ setActive(null); });
-    });
     segs.forEach(function(seg){
       seg.addEventListener('mouseenter', function(e){
-        setActive(seg.getAttribute('data-key'));
         const d = dataArr.find(function(x){ return x.key === seg.getAttribute('data-key'); });
         const wrapRect = container.getBoundingClientRect();
         tooltip.style.left = (e.clientX - wrapRect.left) + 'px';
@@ -1392,7 +1371,7 @@
         tooltip.style.left = (e.clientX - wrapRect.left) + 'px';
         tooltip.style.top = (e.clientY - wrapRect.top) + 'px';
       });
-      seg.addEventListener('mouseleave', function(){ setActive(null); tooltip.classList.remove('show'); });
+      seg.addEventListener('mouseleave', function(){ tooltip.classList.remove('show'); });
     });
   }
   function renderDonuts(){
