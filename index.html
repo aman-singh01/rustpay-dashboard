@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RustPay Dashboard</title>
+<meta name="description" content="Live payments dashboard for RustPay — authorization rates, revenue, payment mix and recent transactions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Tokens ---------- */
+  :root{
+    color-scheme: light;
+    --page-bg: #F2F0FB;
+    --surface: #FFFFFF;
+    --surface-alt: #F8F7FD;
+    --surface-raised: #FFFFFF;
+    --border: #E8E5F5;
+    --border-strong: #D9D3EF;
+    --text-primary: #191531;
+    --text-secondary: #6B6785;
+    --text-muted: #9793AC;
+    --accent: #6C4CF1;
+    --accent-strong: #5636D9;
+    --accent-soft: #EFE9FF;
+    --accent-contrast: #FFFFFF;
+    --focus-ring: #6C4CF1;
+    --brand-grad-start: #4F6EF7;
+    --brand-grad-end: #7C3AED;
+
+    --good-text: #12805A;
+    --good-bg: #E3F6EC;
+    --critical-text: #C22A2A;
+    --critical-bg: #FDEDEC;
+    --warning-text: #965A00;
+    --warning-bg: #FFF3DE;
+    --neutral-text: #6B6785;
+    --neutral-bg: #F0EEF7;
+
+    --series-cards: #9061F9;
+    --series-bank: #1957B8;
+    --series-wallets: #C2660F;
+    --series-bnpl: #0D9488;
+    --series-cash: #DB2777;
+    --series-other: #7A7791;
+
+    --status-good: #0CA30C;
+    --status-warning: #E0A100;
+    --status-critical: #D03B3B;
+
+    --chart-grid: #ECE9F7;
+    --chart-axis: #D8D4EC;
+    --shadow-sm: 0 1px 2px rgba(29, 21, 74, 0.06);
+    --shadow-md: 0 8px 24px rgba(35, 24, 82, 0.08);
+    --shadow-lg: 0 16px 40px rgba(35, 24, 82, 0.16);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --page-bg: #121020;
+      --surface: #1B1830;
+      --surface-alt: #221E3A;
+      --surface-raised: #221E3A;
+      --border: #2E2A48;
+      --border-strong: #3B3560;
+      --text-primary: #F4F2FC;
+      --text-secondary: #B7B2D2;
+      --text-muted: #86819F;
+      --accent: #9B7BFB;
+      --accent-strong: #B39BFC;
+      --accent-soft: #2A2350;
+      --accent-contrast: #17122E;
+      --brand-grad-start: #6E86FF;
+      --brand-grad-end: #9B6BFA;
+
+      --good-text: #3FDB8F;
+      --good-bg: #113224;
+      --critical-text: #FF8B8B;
+      --critical-bg: #3B1B1E;
+      --warning-text: #FFC661;
+      --warning-bg: #3A2C0F;
+      --neutral-text: #B7B2D2;
+      --neutral-bg: #272242;
+
+      --series-cards: #A173E0;
+      --series-bank: #3466C8;
+      --series-wallets: #D9772B;
+      --series-bnpl: #12A394;
+      --series-cash: #E0559B;
+      --series-other: #948FAE;
+
+      --status-good: #2FBF6C;
+      --status-warning: #E8B22E;
+      --status-critical: #E5605F;
+
+      --chart-grid: #292544;
+      --chart-axis: #383260;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.35);
+      --shadow-lg: 0 20px 48px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page-bg: #121020;
+    --surface: #1B1830;
+    --surface-alt: #221E3A;
+    --surface-raised: #221E3A;
+    --border: #2E2A48;
+    --border-strong: #3B3560;
+    --text-primary: #F4F2FC;
+    --text-secondary: #B7B2D2;
+    --text-muted: #86819F;
+    --accent: #9B7BFB;
+    --accent-strong: #B39BFC;
+    --accent-soft: #2A2350;
+    --accent-contrast: #17122E;
+    --brand-grad-start: #6E86FF;
+    --brand-grad-end: #9B6BFA;
+
+    --good-text: #3FDB8F;
+    --good-bg: #113224;
+    --critical-text: #FF8B8B;
+    --critical-bg: #3B1B1E;
+    --warning-text: #FFC661;
+    --warning-bg: #3A2C0F;
+    --neutral-text: #B7B2D2;
+    --neutral-bg: #272242;
+
+    --series-cards: #A173E0;
+    --series-bank: #3466C8;
+    --series-wallets: #D9772B;
+    --series-bnpl: #12A394;
+    --series-cash: #E0559B;
+    --series-other: #948FAE;
+
+    --status-good: #2FBF6C;
+    --status-warning: #E8B22E;
+    --status-critical: #E5605F;
+
+    --chart-grid: #292544;
+    --chart-axis: #383260;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.35);
+    --shadow-lg: 0 20px 48px rgba(0,0,0,0.5);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:var(--page-bg);
+    color:var(--text-primary);
+    font-family:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.brand-name,.kpi-value,.num-display{
+    font-family:"Plus Jakarta Sans","Inter",system-ui,sans-serif;
+  }
+  h1,h2,h3{ text-wrap:balance; margin:0; }
+  button, select, input{ font-family:inherit; }
+  a{ color:inherit; }
+  .tnum{ font-variant-numeric:tabular-nums; }
+  :focus-visible{ outline:2px solid var(--focus-ring); outline-offset:2px; border-radius:6px; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  /* ---------- App shell ---------- */
+  .app{
+    display:flex;
+    min-height:100vh;
+    max-width:1600px;
+    margin:0 auto;
+  }
+  .scrim{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(15,10,35,0.45);
+    z-index:30;
+  }
+  .scrim.show{ display:block; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:284px;
+    flex:none;
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    padding:22px 16px;
+    gap:22px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    padding:2px 6px 20px; margin-bottom:4px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand-mark{
+    width:52px; height:52px; border-radius:15px; flex:none;
+    background:linear-gradient(135deg, var(--brand-grad-start), var(--brand-grad-end));
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-size:28px; font-family:"Plus Jakarta Sans",sans-serif;
+    box-shadow: var(--shadow-sm);
+  }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.2; }
+  .brand-name{ font-weight:800; font-size:22px; letter-spacing:-0.01em; color:var(--text-primary); }
+  .brand-tagline{ font-size:10.5px; color:var(--text-muted); font-weight:600; white-space:nowrap; }
+
+  .nav-group{ display:flex; flex-direction:column; gap:2px; }
+  .nav-group + .nav-group{ padding-top:10px; border-top:1px solid var(--border); }
+  .nav-item{
+    display:flex; align-items:center; gap:11px;
+    padding:9px 12px; border-radius:10px;
+    color:var(--text-secondary); font-size:13.5px; font-weight:600;
+    background:none; border:none; width:100%; text-align:left; cursor:pointer;
+    position:relative;
+  }
+  .nav-item svg{ flex:none; }
+  .nav-item:hover{ background:var(--surface-alt); color:var(--text-primary); }
+  .nav-item.active{ background:var(--accent-soft); color:var(--text-primary); font-weight:700; }
+  .nav-badge{
+    margin-left:auto; background:var(--critical-text); color:#fff;
+    font-size:10.5px; font-weight:700; line-height:1;
+    padding:3px 6px; border-radius:999px;
+  }
+  .nav-item.active .nav-badge{ background:var(--accent-strong); }
+
+  .promo{
+    margin-top:auto;
+    background:linear-gradient(160deg, var(--accent-soft), var(--surface-alt));
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:16px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .promo-title{ display:flex; align-items:center; gap:7px; font-weight:700; font-size:13.5px; }
+  .promo-text{ font-size:12px; color:var(--text-secondary); line-height:1.5; }
+  .btn-promo{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 12px; font-weight:700; font-size:12.5px; cursor:pointer;
+  }
+  .btn-promo:hover{ background:var(--accent-strong); }
+
+  /* ---------- Main ---------- */
+  .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:16px 28px;
+    border-bottom:1px solid var(--border);
+    background:var(--page-bg);
+    position:sticky; top:0; z-index:10;
+  }
+  .hamburger{
+    display:none; align-items:center; justify-content:center;
+    width:38px; height:38px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text-primary); cursor:pointer; flex:none;
+  }
+  .topbar-spacer{ flex:1; }
+  .icon-btn{
+    position:relative;
+    width:40px; height:40px; border-radius:11px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface); border:1px solid var(--border);
+    color:var(--text-secondary); cursor:pointer; flex:none;
+  }
+  .icon-btn:hover{ color:var(--text-primary); border-color:var(--border-strong); }
+  .dot-badge{
+    position:absolute; top:8px; right:9px; width:8px; height:8px; border-radius:999px;
+    background:var(--critical-text); border:2px solid var(--page-bg);
+  }
+  .user-chip{
+    display:flex; align-items:center; gap:9px;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:5px 10px 5px 5px; cursor:pointer;
+  }
+  .avatar{
+    width:32px; height:32px; border-radius:999px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:12.5px; color:#fff;
+  }
+  .user-meta{ display:flex; flex-direction:column; line-height:1.2; text-align:left; }
+  .user-name{ font-size:13px; font-weight:700; }
+  .user-role{ font-size:11px; color:var(--text-muted); font-weight:600; }
+
+  .menu-anchor{ position:relative; }
+  .menu{
+    position:absolute; top:calc(100% + 8px); right:0;
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    box-shadow:var(--shadow-lg); padding:8px; min-width:220px; z-index:40;
+    display:none;
+  }
+  .menu.open{ display:block; }
+  .menu-header{ padding:8px 10px 10px; font-size:12px; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border); margin-bottom:6px; }
+  .menu-item{
+    display:flex; align-items:center; gap:10px; width:100%;
+    padding:9px 10px; border-radius:9px; border:none; background:none;
+    font-size:13px; font-weight:600; color:var(--text-primary); cursor:pointer; text-align:left;
+  }
+  .menu-item:hover{ background:var(--surface-alt); }
+  .menu-item.danger{ color:var(--critical-text); }
+  .alert-item{ display:flex; gap:10px; padding:9px 10px; border-radius:9px; }
+  .alert-item:hover{ background:var(--surface-alt); }
+  .alert-dot{ width:8px; height:8px; border-radius:999px; margin-top:5px; flex:none; }
+  .alert-body{ display:flex; flex-direction:column; gap:2px; }
+  .alert-text{ font-size:12.5px; font-weight:600; }
+  .alert-time{ font-size:11px; color:var(--text-muted); }
+
+  /* ---------- Content ---------- */
+  .content{ padding:24px 28px 60px; display:flex; flex-direction:column; gap:22px; }
+  .page-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .greeting{ display:flex; align-items:center; gap:10px; font-size:26px; font-weight:800; }
+  .greeting-sub{ margin-top:4px; font-size:13.5px; color:var(--text-secondary); }
+  .head-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  .dropdown-btn{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border); border-radius:11px;
+    padding:9px 13px; font-size:13px; font-weight:600; color:var(--text-primary);
+    cursor:pointer; white-space:nowrap;
+  }
+  .dropdown-btn:hover{ border-color:var(--border-strong); }
+  .dropdown-btn svg.chev{ color:var(--text-muted); transition:transform .15s ease; }
+  .dropdown-btn[aria-expanded="true"] svg.chev{ transform:rotate(180deg); }
+  .btn-primary{
+    display:flex; align-items:center; gap:8px;
+    background:var(--text-primary); color:var(--page-bg); border:none; border-radius:11px;
+    padding:10px 15px; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .btn-primary:hover{ opacity:0.88; }
+  .btn-secondary{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); color:var(--text-primary); border:1px solid var(--border); border-radius:11px;
+    padding:10px 15px; font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .btn-secondary:hover{ border-color:var(--border-strong); background:var(--surface-alt); }
+  .dropdown{ position:relative; }
+  .dropdown-menu{
+    position:absolute; top:calc(100% + 8px); left:0; z-index:35;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow-lg); padding:6px; min-width:180px; display:none; max-height:280px; overflow-y:auto;
+  }
+  .dropdown-menu.open{ display:block; }
+  .dropdown-option{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    width:100%; padding:8px 10px; border-radius:8px; border:none; background:none;
+    font-size:13px; font-weight:600; color:var(--text-primary); cursor:pointer; text-align:left;
+  }
+  .dropdown-option:hover{ background:var(--surface-alt); }
+  .dropdown-option.selected{ color:var(--accent-strong); background:var(--accent-soft); }
+
+  .filter-bar{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* KPI grid */
+  .kpi-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .kpi-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:18px; display:flex; flex-direction:column; gap:14px;
+    box-shadow:var(--shadow-sm);
+  }
+  .kpi-top{ display:flex; align-items:center; gap:11px; }
+  .kpi-icon{
+    width:38px; height:38px; border-radius:11px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .kpi-label{ font-size:12.5px; font-weight:700; color:var(--text-secondary); }
+  .kpi-value{ font-size:24px; font-weight:800; letter-spacing:-0.01em; }
+  .kpi-delta{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; }
+  .kpi-delta.up{ color:var(--good-text); }
+  .kpi-delta.down{ color:var(--critical-text); }
+  .kpi-delta-note{ color:var(--text-muted); font-weight:600; }
+
+  /* Panels / cards */
+  .row{ display:grid; gap:16px; }
+  .row.charts{ grid-template-columns:1.6fr 1fr; }
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:20px; box-shadow:var(--shadow-sm); min-width:0;
+  }
+  .panel-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .panel-title{ font-size:15.5px; font-weight:700; }
+  .panel-sub{ font-size:12px; color:var(--text-muted); margin-top:2px; font-weight:500; }
+  .panel-link{ font-size:12.5px; font-weight:700; color:var(--accent-strong); background:none; border:none; cursor:pointer; }
+  .panel-link:hover{ text-decoration:underline; }
+
+  /* Line chart */
+  .chart-wrap{ position:relative; }
+  .chart-tooltip{
+    position:absolute; pointer-events:none; z-index:5;
+    background:var(--text-primary); color:var(--page-bg);
+    font-size:11.5px; font-weight:600; padding:7px 10px; border-radius:9px;
+    box-shadow:var(--shadow-md); white-space:nowrap; opacity:0; transform:translate(-50%,-115%);
+    transition:opacity .1s ease;
+  }
+  .chart-tooltip.show{ opacity:1; }
+  .chart-tooltip .tt-sub{ opacity:0.7; font-weight:500; }
+  svg.linechart{ width:100%; height:auto; display:block; overflow:visible; }
+  .grid-line{ stroke:var(--chart-grid); stroke-width:1; }
+  .axis-label{ fill:var(--text-muted); font-size:10.5px; font-family:"Inter",sans-serif; }
+  .area-fill{ fill:url(#areaGradient); }
+  .line-path{ fill:none; stroke:var(--accent); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+  .pt-dot{ fill:var(--surface); stroke:var(--accent); stroke-width:2.5; }
+  .pt-dot.endpoint{ stroke-width:3; }
+  .pt-hit{ fill:transparent; cursor:crosshair; }
+  .crosshair{ stroke:var(--border-strong); stroke-width:1; stroke-dasharray:3 3; opacity:0; }
+  .crosshair.show{ opacity:1; }
+
+  /* Donut */
+  .donut-row{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+  .donut-wrap{ position:relative; width:168px; height:168px; flex:none; }
+  .donut-wrap svg{ width:100%; height:100%; }
+  .donut-seg{ transition:opacity .12s ease; cursor:pointer; }
+  .donut-seg.dim{ opacity:0.35; }
+  .donut-center{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; pointer-events:none;
+  }
+  .donut-center .num{ font-size:19px; font-weight:800; font-family:"Plus Jakarta Sans",sans-serif; }
+  .donut-center .lbl{ font-size:10.5px; color:var(--text-muted); font-weight:600; }
+  .legend{ display:flex; flex-direction:column; gap:9px; flex:1; min-width:150px; }
+  .legend-row{ display:flex; align-items:center; gap:9px; font-size:12.5px; border-radius:8px; padding:3px 4px; cursor:pointer; }
+  .legend-row:hover, .legend-row.active{ background:var(--surface-alt); }
+  .legend-row.dim{ opacity:0.45; }
+  .legend-dot{ width:9px; height:9px; border-radius:999px; flex:none; }
+  .legend-label{ color:var(--text-secondary); font-weight:600; flex:1; }
+  .legend-pct{ font-weight:700; color:var(--text-primary); }
+
+  /* Table */
+  .row.lower{ grid-template-columns:1.6fr 1fr; }
+  .table-scroll{ overflow-x:auto; }
+  table.tx{ width:100%; border-collapse:collapse; min-width:520px; }
+  table.tx th{
+    text-align:left; font-size:11.5px; color:var(--text-muted); font-weight:700;
+    text-transform:uppercase; letter-spacing:0.03em; padding:0 10px 10px; border-bottom:1px solid var(--border);
+  }
+  table.tx td{ padding:11px 10px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+  table.tx tr:last-child td{ border-bottom:none; }
+  .cust{ display:flex; align-items:center; gap:9px; font-weight:600; }
+  .cust .avatar{ width:28px; height:28px; font-size:11px; }
+  .pill{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:700; }
+  .pill.good{ background:var(--good-bg); color:var(--good-text); }
+  .pill.critical{ background:var(--critical-bg); color:var(--critical-text); }
+  .pill.warning{ background:var(--warning-bg); color:var(--warning-text); }
+  .muted-cell{ color:var(--text-muted); }
+  .empty-row td{ text-align:center; padding:28px 10px; color:var(--text-muted); font-size:13px; }
+
+  /* Empty-state page */
+  .placeholder{
+    background:var(--surface); border:1px solid var(--border); border-radius:18px;
+    padding:56px 24px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px;
+    box-shadow:var(--shadow-sm);
+  }
+  .placeholder-icon{
+    width:56px; height:56px; border-radius:16px; background:var(--accent-soft); color:var(--accent-strong);
+    display:flex; align-items:center; justify-content:center; margin-bottom:6px;
+  }
+  .placeholder h2{ font-size:19px; }
+  .placeholder p{ max-width:420px; color:var(--text-secondary); font-size:13.5px; line-height:1.6; margin:0; }
+  .placeholder-actions{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; justify-content:center; }
+
+  .table-footnote{ margin-top:12px; font-size:12px; color:var(--text-muted); text-align:right; }
+
+  /* Sign-out overlay */
+  .signout-overlay{
+    position:fixed; inset:0; z-index:80; background:var(--page-bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .signout-overlay.show{ opacity:1; pointer-events:all; }
+  .spinner{
+    width:30px; height:30px; border-radius:999px;
+    border:3px solid var(--border); border-top-color:var(--accent);
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .signout-text{ font-size:13.5px; font-weight:600; color:var(--text-secondary); }
+
+  /* Toast */
+  .toast-stack{ position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:8px; z-index:60; }
+  .toast{
+    background:var(--text-primary); color:var(--page-bg); padding:11px 16px; border-radius:11px;
+    font-size:13px; font-weight:600; box-shadow:var(--shadow-lg);
+    display:flex; align-items:center; gap:9px;
+    animation:toast-in .18s ease;
+  }
+  @keyframes toast-in{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+
+  [hidden]{ display:none !important; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1080px){
+    .row.charts, .row.lower{ grid-template-columns:1fr; }
+    .kpi-grid{ grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width: 900px){
+    .sidebar{
+      position:fixed; left:0; top:0; z-index:31; transform:translateX(-100%);
+      transition:transform .2s ease; box-shadow:var(--shadow-lg);
+    }
+    .sidebar.open{ transform:translateX(0); }
+    .hamburger{ display:flex; }
+  }
+  @media (max-width: 620px){
+    .kpi-grid{ grid-template-columns:1fr; }
+    .content{ padding:18px 14px 48px; }
+    .topbar{ padding:14px 14px; }
+    .greeting{ font-size:21px; }
+    .user-meta{ display:none; }
+    .head-actions{ width:100%; }
+    .head-actions .dropdown, .head-actions .btn-primary, .head-actions .btn-secondary{ flex:1; }
+    .head-actions .dropdown-btn{ width:100%; justify-content:space-between; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">R</div>
+      <div class="brand-text">
+        <span class="brand-name">RustPay</span>
+        <span class="brand-tagline">Payments for a Smarter World</span>
+      </div>
+    </div>
+
+    <nav class="nav-group" id="nav-main"></nav>
+    <nav class="nav-group" id="nav-alerts"></nav>
+    <nav class="nav-group" id="nav-settings"></nav>
+
+    <div class="promo">
+      <div class="promo-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-strong)" stroke-width="2"><path d="M5 17 2 9l5.5 3L12 5l4.5 7L22 9l-3 8Z" stroke-linejoin="round"/><path d="M5 21h14" stroke-linecap="round"/></svg>
+        Upgrade to Pro
+      </div>
+      <p class="promo-text">Unlock advanced features and higher transaction limits.</p>
+      <button class="btn-promo" id="btn-upgrade" type="button">
+        Upgrade Now
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger" id="btn-hamburger" type="button" aria-label="Open menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+      </button>
+      <div class="topbar-spacer"></div>
+
+      <div class="menu-anchor">
+        <button class="icon-btn" id="btn-alerts" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6Z" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" stroke-linecap="round"/></svg>
+          <span class="dot-badge"></span>
+        </button>
+        <div class="menu" id="menu-alerts" role="menu">
+          <div class="menu-header">Alert events</div>
+          <div class="alert-item"><span class="alert-dot" style="background:var(--status-critical)"></span><div class="alert-body"><span class="alert-text">3 failed payments from Liam Smith's card</span><span class="alert-time">12 minutes ago</span></div></div>
+          <div class="alert-item"><span class="alert-dot" style="background:var(--status-warning)"></span><div class="alert-body"><span class="alert-text">Auth rate dipped below 92% in DE region</span><span class="alert-time">1 hour ago</span></div></div>
+          <div class="alert-item"><span class="alert-dot" style="background:var(--accent)"></span><div class="alert-body"><span class="alert-text">New payout scheduled for 30 May</span><span class="alert-time">3 hours ago</span></div></div>
+        </div>
+      </div>
+
+      <div class="menu-anchor">
+        <button class="user-chip" id="btn-user" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="avatar" style="background:var(--series-bnpl)">AR</span>
+          <span class="user-meta"><span class="user-name">Alex Roper</span><span class="user-role">Admin</span></span>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="menu" id="menu-user" role="menu">
+          <button class="menu-item" type="button" id="menu-profile">Your profile</button>
+          <button class="menu-item" type="button" id="menu-account">Account settings</button>
+          <button class="menu-item danger" type="button" id="btn-logout">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="content">
+
+      <!-- ================= DASHBOARD VIEW ================= -->
+      <section id="view-dashboard">
+        <div class="page-head">
+          <div>
+            <div class="greeting">Hello, Roper <span aria-hidden="true">👋</span></div>
+            <div class="greeting-sub">Here's what's happening with your payments today.</div>
+          </div>
+          <div class="head-actions">
+            <div class="dropdown" id="dd-month">
+              <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17" stroke-linecap="round"/></svg>
+                <span class="dd-label">May 2025</span>
+                <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="dropdown-menu" role="listbox"></div>
+            </div>
+            <button class="btn-primary" id="btn-export" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0 4.5-4.5M12 16 7.5 11.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19.5h16" stroke-linecap="round"/></svg>
+              Export Report
+            </button>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="kpi-grid"></div>
+
+        <div class="filter-bar">
+          <div class="dropdown" id="dd-country">
+            <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <span aria-hidden="true">🇬🇧</span><span class="dd-label">Country: United Kingdom</span>
+              <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="dropdown-menu" role="listbox"></div>
+          </div>
+          <div class="dropdown" id="dd-currency">
+            <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <span aria-hidden="true">£</span><span class="dd-label">Currency: GBP</span>
+              <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="dropdown-menu" role="listbox"></div>
+          </div>
+          <div class="dropdown" id="dd-method">
+            <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19" /></svg>
+              <span class="dd-label">Payment method</span>
+              <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="dropdown-menu" role="listbox"></div>
+          </div>
+          <div class="dropdown" id="dd-status">
+            <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16l-6 8v6l-4-2v-4Z" stroke-linejoin="round"/></svg>
+              <span class="dd-label">Status</span>
+              <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="dropdown-menu" role="listbox"></div>
+          </div>
+        </div>
+
+        <div class="row charts">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">Successful payments</div>
+                <div class="panel-sub">In the last month</div>
+              </div>
+              <div class="dropdown" id="dd-period">
+                <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="dd-label">Monthly</span>
+                  <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="dropdown-menu" role="listbox"></div>
+              </div>
+            </div>
+            <div class="chart-wrap" id="linechart-wrap"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">Payment method overview</div>
+                <div class="panel-sub">In the last month</div>
+              </div>
+            </div>
+            <div class="donut-row" id="donut-methods"></div>
+          </div>
+        </div>
+
+        <div class="row lower">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Recent transactions</div>
+              <button class="panel-link" id="btn-viewall" type="button">View all</button>
+            </div>
+            <div class="table-scroll">
+              <table class="tx">
+                <thead>
+                  <tr><th>ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+                </thead>
+                <tbody id="tx-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Transaction status</div>
+              <div class="dropdown" id="dd-statusperiod">
+                <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="dd-label">This month</span>
+                  <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="dropdown-menu" role="listbox"></div>
+              </div>
+            </div>
+            <div class="donut-row" id="donut-status"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PAYMENTS VIEW ================= -->
+      <section id="view-payments" hidden>
+        <div class="page-head">
+          <div>
+            <div class="greeting" style="font-size:22px;">Payments</div>
+            <div class="greeting-sub">Every charge processed through RustPay, across all connected merchants.</div>
+          </div>
+          <div class="head-actions">
+            <button class="btn-secondary" id="btn-pay-back" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5 4 12l7 7M4 12h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Dashboard
+            </button>
+            <button class="btn-primary" id="btn-pay-export" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0 4.5-4.5M12 16 7.5 11.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19.5h16" stroke-linecap="round"/></svg>
+              Export Report
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="dropdown" id="dd-pay-method">
+            <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19"/></svg>
+              <span class="dd-label">Payment method</span>
+              <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="dropdown-menu" role="listbox"></div>
+          </div>
+          <div class="dropdown" id="dd-pay-status">
+            <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16l-6 8v6l-4-2v-4Z" stroke-linejoin="round"/></svg>
+              <span class="dd-label">Status</span>
+              <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="dropdown-menu" role="listbox"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="table-scroll">
+            <table class="tx">
+              <thead>
+                <tr><th>ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Method</th><th>Date</th></tr>
+              </thead>
+              <tbody id="payments-tx-body"></tbody>
+            </table>
+          </div>
+          <div class="table-footnote" id="payments-tx-count"></div>
+        </div>
+      </section>
+
+      <!-- ================= EMPTY-STATE VIEW ================= -->
+      <section id="view-placeholder" hidden>
+        <div class="placeholder">
+          <div class="placeholder-icon" id="ph-icon"></div>
+          <h2 id="ph-title">Section</h2>
+          <p id="ph-text">This part of RustPay isn't in the preview yet.</p>
+          <div class="placeholder-actions">
+            <button class="btn-primary" id="ph-action" type="button">Action</button>
+            <button class="btn-secondary" id="ph-back" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5 4 12l7 7M4 12h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Back to dashboard
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="signout-overlay" id="signout-overlay">
+  <div class="spinner" aria-hidden="true"></div>
+  <div class="signout-text">Signing you out…</div>
+</div>
+
+<div class="chart-tooltip" id="chart-tooltip"></div>
+<div class="toast-stack" id="toast-stack"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ ICONS ============ */
+  const ICONS = {
+    dashboard: '<path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-16v5h6V4h-6Z"/>',
+    payments: '<rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19"/>',
+    invoices: '<path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M9 12h6M9 16h6M9 8h3"/>',
+    executions: '<path d="M4 5h16M4 12h10M4 19h16" stroke-linecap="round"/><circle cx="18" cy="12" r="2.6"/>',
+    insights: '<path d="M4 20V10M11 20V4M18 20v-7" stroke-linecap="round"/>',
+    merchants: '<path d="M4 9.5 5.5 4h13L20 9.5" stroke-linejoin="round"/><path d="M4.5 9.5h15V19a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1V9.5Z"/><path d="M10 20v-5h4v5"/>',
+    alerts: '<path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6Z" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" stroke-linecap="round"/>',
+    reconciliation: '<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8" stroke-linecap="round"/><path d="M20 4v4h-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16" stroke-linecap="round"/><path d="M4 20v-4h4" stroke-linecap="round" stroke-linejoin="round"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.9.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.3 1.9V10a1.7 1.7 0 0 0 1.5 1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+    team: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke-linecap="round"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15.5 14c2.9.4 5 2.7 5 6" stroke-linecap="round"/>',
+    api: '<path d="m9 6-6 6 6 6M15 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.5 2.5 0 1 1 3.6 2.2c-.9.5-1.3 1-1.3 1.9" stroke-linecap="round"/><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none"/>',
+    crown: '<path d="M5 17 2 9l5.5 3L12 5l4.5 7L22 9l-3 8Z" stroke-linejoin="round"/><path d="M5 21h14" stroke-linecap="round"/>'
+  };
+  function icon(name, size){
+    size = size || 17;
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'+ICONS[name]+'</svg>';
+  }
+
+  /* ============ NAV DATA ============ */
+  const NAV_MAIN = [
+    { id:'dashboard', label:'Dashboard', icon:'dashboard' },
+    { id:'payments', label:'Payments', icon:'payments' },
+    { id:'invoices', label:'Invoices', icon:'invoices' },
+    { id:'executions', label:'Executions', icon:'executions' },
+    { id:'insights', label:'Insights', icon:'insights' },
+    { id:'merchants', label:'Merchants', icon:'merchants' }
+  ];
+  const NAV_ALERTS = [
+    { id:'alert-events', label:'Alert events', icon:'alerts', badge:'3' },
+    { id:'reconciliation', label:'Reconciliation', icon:'reconciliation' }
+  ];
+  const NAV_SETTINGS = [
+    { id:'settings', label:'Settings', icon:'settings' },
+    { id:'team', label:'Team Management', icon:'team' },
+    { id:'api-logs', label:'API Logs', icon:'api' },
+    { id:'help', label:'Help & Support', icon:'help' }
+  ];
+  const PLACEHOLDER_COPY = {
+    invoices: ['Invoices', "No invoices yet. Draft one to bill a merchant directly from RustPay.", 'New invoice', 'Invoice draft created — add line items to send it.'],
+    executions: ['Executions', 'No job runs in this window. Payouts, retries and reconciliations will appear here as they execute.', 'Run now', 'Execution queued — check back shortly for its status.'],
+    insights: ['Insights', 'Trend analysis across authorization rates, chargebacks and processor performance for your account.', 'Build a report', 'Report builder opened in a new workspace.'],
+    merchants: ['Merchants', 'You have one connected merchant account. Add another to route payments through a second entity.', 'Add merchant', 'Merchant invite sent — they will receive setup instructions by email.'],
+    'alert-events': ['Alert events', 'Threshold breaches and anomalies RustPay has flagged, with severity and assignment.', 'New alert rule', 'Alert rule saved — you will be notified when it triggers.'],
+    reconciliation: ['Reconciliation', 'Settlement files are matched against ledger entries automatically; mismatches surface here.', 'Upload settlement file', 'File received — reconciliation will run in the background.'],
+    settings: ['Settings', 'Webhooks, API keys, payout schedules and notification preferences for your RustPay account.', 'Generate API key', 'New API key generated — copy it now, it won’t be shown again.'],
+    team: ['Team Management', 'Alex Roper (Admin) is the only teammate on this account right now.', 'Invite teammate', 'Invite sent — they will get an email to join RustPay.'],
+    'api-logs': ['API Logs', 'Recent API requests, response codes and latency for your integration.', 'Copy API base URL', 'Copied api.rustpay.com/v1 to your clipboard.'],
+    help: ['Help & Support', 'Search the RustPay knowledge base, or open a ticket and our support team will follow up.', 'Contact support', 'Ticket opened — support usually replies within a few hours.']
+  };
+
+  /* ============ MONTH / KPI DATA ============ */
+  const MONTHS = ['2025-02','2025-03','2025-04','2025-05','2025-06','2025-07'];
+  const MONTH_DATA = {
+    '2025-02': { label:'February 2025', recovered:158200, recoveredDelta:8.1, authRate:92.3, authDelta:1.6, tx:8894213, txDelta:3.4, revenue:9540210, revenueDelta:5.2 },
+    '2025-03': { label:'March 2025',    recovered:161900, recoveredDelta:2.3, authRate:91.9, authDelta:-0.4, tx:8650190, txDelta:-2.6, revenue:9380500, revenueDelta:-1.7 },
+    '2025-04': { label:'April 2025',    recovered:171200, recoveredDelta:5.7, authRate:93.1, authDelta:1.3, tx:9120876, txDelta:5.4, revenue:10230870, revenueDelta:9.1 },
+    '2025-05': { label:'May 2025',      recovered:182350, recoveredDelta:12.4, authRate:94.18, authDelta:3.2, tx:9842301, txDelta:-2.6, revenue:11245670, revenueDelta:9.1 },
+    '2025-06': { label:'June 2025',     recovered:196400, recoveredDelta:7.7, authRate:94.6, authDelta:0.4, tx:10120655, txDelta:2.8, revenue:11860430, revenueDelta:5.5 },
+    '2025-07': { label:'July 2025',     recovered:189700, recoveredDelta:-3.4, authRate:94.0, authDelta:-0.6, tx:9765320, txDelta:-3.5, revenue:11510980, revenueDelta:-2.9 }
+  };
+  let currentMonth = '2025-05';
+  let currentCurrency = 'GBP';
+  const CURRENCY = {
+    GBP:{ symbol:'£', rate:1 },
+    USD:{ symbol:'$', rate:1.27 },
+    EUR:{ symbol:'€', rate:1.17 }
+  };
+
+  const LINE_MONTHLY = [
+    { label:'Jan', value:400000 },
+    { label:'Feb', value:510000 },
+    { label:'Mar', value:430000 },
+    { label:'Apr', value:690000 },
+    { label:'May', value:780000 },
+    { label:'Jun', value:1060000 }
+  ];
+  const LINE_WEEKLY = [
+    { label:'Wk 1', value:172000 },
+    { label:'Wk 2', value:205000 },
+    { label:'Wk 3', value:189000 },
+    { label:'Wk 4', value:214000 }
+  ];
+  let currentPeriod = 'monthly';
+
+  const METHOD_MIX = [
+    { key:'cards', label:'Cards', pct:34.2, color:'var(--series-cards)' },
+    { key:'bnpl', label:'Buy Now, Pay Later', pct:12.4, color:'var(--series-bnpl)' },
+    { key:'bank', label:'Bank Transfer', pct:26.8, color:'var(--series-bank)' },
+    { key:'wallets', label:'Digital Wallets', pct:18.6, color:'var(--series-wallets)' },
+    { key:'cash', label:'Cash', pct:6.1, color:'var(--series-cash)' },
+    { key:'other', label:'Others', pct:2.0, color:'var(--series-other)' }
+  ];
+  const METHOD_LEGEND_ORDER = ['cards','bank','wallets','bnpl','cash','other'];
+
+  const STATUS_MIX_THIS = [
+    { key:'successful', label:'Successful', pct:72.3, color:'var(--status-good)' },
+    { key:'failed', label:'Failed', pct:14.8, color:'var(--status-critical)' },
+    { key:'pending', label:'Pending', pct:8.6, color:'var(--status-warning)' },
+    { key:'refunded', label:'Refunded', pct:4.3, color:'var(--series-other)' }
+  ];
+  const STATUS_MIX_LAST = [
+    { key:'successful', label:'Successful', pct:69.1, color:'var(--status-good)' },
+    { key:'failed', label:'Failed', pct:17.2, color:'var(--status-critical)' },
+    { key:'pending', label:'Pending', pct:9.4, color:'var(--status-warning)' },
+    { key:'refunded', label:'Refunded', pct:4.3, color:'var(--series-other)' }
+  ];
+  let currentStatusPeriod = 'this';
+
+  const TRANSACTIONS = [
+    { id:'785210', name:'Olivia Carter', amount:1250.00, status:'Successful', date:'May 28, 2025', method:'cards' },
+    { id:'785209', name:'Liam Smith', amount:320.00, status:'Failed', date:'May 28, 2025', method:'bank' },
+    { id:'785208', name:'Emma Johnson', amount:980.00, status:'Successful', date:'May 27, 2025', method:'wallets' },
+    { id:'785207', name:'Noah Brown', amount:640.00, status:'Pending', date:'May 26, 2025', method:'cash' },
+    { id:'785206', name:'Ava Davis', amount:415.00, status:'Successful', date:'May 25, 2025', method:'cards' }
+  ];
+  const MORE_TRANSACTIONS = [
+    { id:'785205', name:'James Wilson', amount:210.00, status:'Successful', date:'May 24, 2025', method:'bank' },
+    { id:'785204', name:'Sophia Martinez', amount:75.50, status:'Successful', date:'May 24, 2025', method:'cards' },
+    { id:'785203', name:'Lucas Anderson', amount:1840.00, status:'Successful', date:'May 23, 2025', method:'wallets' },
+    { id:'785202', name:'Mia Thompson', amount:132.20, status:'Failed', date:'May 23, 2025', method:'cards' },
+    { id:'785201', name:'Ethan Walker', amount:560.00, status:'Successful', date:'May 22, 2025', method:'cash' },
+    { id:'785200', name:'Isabella Clark', amount:990.00, status:'Pending', date:'May 22, 2025', method:'bank' },
+    { id:'785199', name:'Benjamin Lewis', amount:45.00, status:'Successful', date:'May 21, 2025', method:'wallets' },
+    { id:'785198', name:'Charlotte Hall', amount:2310.00, status:'Successful', date:'May 21, 2025', method:'cards' },
+    { id:'785197', name:'Henry Young', amount:310.75, status:'Failed', date:'May 20, 2025', method:'bank' },
+    { id:'785196', name:'Amelia King', amount:685.00, status:'Successful', date:'May 20, 2025', method:'wallets' },
+    { id:'785195', name:'Jack Wright', amount:128.40, status:'Successful', date:'May 19, 2025', method:'cards' },
+    { id:'785194', name:'Grace Scott', amount:950.00, status:'Pending', date:'May 19, 2025', method:'cash' },
+    { id:'785193', name:'Daniel Green', amount:275.00, status:'Successful', date:'May 18, 2025', method:'bank' },
+    { id:'785192', name:'Chloe Baker', amount:1120.00, status:'Successful', date:'May 18, 2025', method:'cards' },
+    { id:'785191', name:'Samuel Adams', amount:60.00, status:'Failed', date:'May 17, 2025', method:'wallets' }
+  ];
+  const ALL_TRANSACTIONS = TRANSACTIONS.concat(MORE_TRANSACTIONS);
+  const METHOD_LABELS = { cards:'Cards', bank:'Bank Transfer', wallets:'Digital Wallets', bnpl:'Buy Now, Pay Later', cash:'Cash' };
+
+  /* ============ HELPERS ============ */
+  function fmtInt(n){ return Math.round(n).toLocaleString('en-GB'); }
+  function fmtMoney(amountGBP){
+    const c = CURRENCY[currentCurrency];
+    const v = amountGBP * c.rate;
+    return c.symbol + v.toLocaleString('en-GB', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+  function fmtMoneyWhole(amountGBP){
+    const c = CURRENCY[currentCurrency];
+    const v = amountGBP * c.rate;
+    return c.symbol + Math.round(v).toLocaleString('en-GB');
+  }
+  function initials(name){
+    return name.split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+  }
+  function initialsColor(name){
+    const palette = ['var(--series-cards)','var(--series-bank)','var(--series-wallets)','var(--series-bnpl)','var(--series-cash)'];
+    let h = 0;
+    for (let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
+    return palette[h % palette.length];
+  }
+
+  function showToast(msg){
+    const stack = document.getElementById('toast-stack');
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 13 4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>' + msg;
+    stack.appendChild(el);
+    setTimeout(function(){
+      el.style.transition = 'opacity .25s ease';
+      el.style.opacity = '0';
+      setTimeout(function(){ el.remove(); }, 260);
+    }, 3200);
+  }
+
+  /* ============ GENERIC DROPDOWN ============ */
+  function setupDropdown(rootId, options, opts){
+    const root = document.getElementById(rootId);
+    if (!root) return;
+    const btn = root.querySelector('.dropdown-btn');
+    const menu = root.querySelector('.dropdown-menu');
+    const labelEl = btn.querySelector('.dd-label');
+    menu.innerHTML = options.map(function(o){
+      return '<button type="button" class="dropdown-option'+(o.value===opts.selected?' selected':'')+'" data-value="'+o.value+'">'+
+        '<span>'+o.text+'</span>'+
+        (o.value===opts.selected ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 13 4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
+      '</button>';
+    }).join('');
+
+    function close(){ menu.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+    function open(){
+      closeAllDropdowns(root);
+      menu.classList.add('open');
+      btn.setAttribute('aria-expanded','true');
+    }
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (menu.classList.contains('open')) close(); else open();
+    });
+    menu.querySelectorAll('.dropdown-option').forEach(function(optEl){
+      optEl.addEventListener('click', function(e){
+        e.stopPropagation();
+        const val = optEl.getAttribute('data-value');
+        const found = options.find(function(o){ return o.value === val; });
+        if (opts.labelPrefix) labelEl.textContent = opts.labelPrefix + found.text; else labelEl.textContent = found.text;
+        menu.querySelectorAll('.dropdown-option').forEach(function(x){ x.classList.remove('selected'); x.innerHTML = x.querySelector('span').outerHTML; });
+        optEl.classList.add('selected');
+        optEl.innerHTML = '<span>'+found.text+'</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 13 4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        close();
+        if (opts.onChange) opts.onChange(val, found);
+      });
+    });
+    root.__closeDropdown = close;
+    return { close: close };
+  }
+  const ALL_DROPDOWN_IDS = ['dd-month','dd-country','dd-currency','dd-method','dd-status','dd-period','dd-statusperiod','dd-pay-method','dd-pay-status'];
+  function closeAllDropdowns(except){
+    ALL_DROPDOWN_IDS.forEach(function(id){
+      const el = document.getElementById(id);
+      if (el && el !== except && el.__closeDropdown) el.__closeDropdown();
+    });
+  }
+  document.addEventListener('click', function(){ closeAllDropdowns(null); });
+
+  /* ============ RENDER: NAV ============ */
+  let activeNav = 'dashboard';
+  function renderNav(){
+    function group(container, items){
+      container.innerHTML = items.map(function(it){
+        return '<button type="button" class="nav-item'+(it.id===activeNav?' active':'')+'" data-nav="'+it.id+'">'+
+          icon(it.icon)+'<span>'+it.label+'</span>'+
+          (it.badge ? '<span class="nav-badge">'+it.badge+'</span>' : '') +
+        '</button>';
+      }).join('');
+    }
+    group(document.getElementById('nav-main'), NAV_MAIN);
+    group(document.getElementById('nav-alerts'), NAV_ALERTS);
+    group(document.getElementById('nav-settings'), NAV_SETTINGS);
+    document.querySelectorAll('.nav-item').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        activeNav = btn.getAttribute('data-nav');
+        renderNav();
+        renderView();
+        closeSidebarMobile();
+      });
+    });
+  }
+  function renderView(){
+    const dash = document.getElementById('view-dashboard');
+    const pay = document.getElementById('view-payments');
+    const ph = document.getElementById('view-placeholder');
+    dash.hidden = true; pay.hidden = true; ph.hidden = true;
+    if (activeNav === 'dashboard'){
+      dash.hidden = false;
+    } else if (activeNav === 'payments'){
+      pay.hidden = false;
+      renderPaymentsTable();
+    } else {
+      ph.hidden = false;
+      const copy = PLACEHOLDER_COPY[activeNav] || ['Section','Nothing here yet.','OK',''];
+      document.getElementById('ph-title').textContent = copy[0];
+      document.getElementById('ph-text').textContent = copy[1];
+      const actionBtn = document.getElementById('ph-action');
+      actionBtn.textContent = copy[2];
+      phActionToast = copy[3];
+      const iconName = [].concat(NAV_MAIN,NAV_ALERTS,NAV_SETTINGS).find(function(n){ return n.id===activeNav; });
+      document.getElementById('ph-icon').innerHTML = icon(iconName ? iconName.icon : 'dashboard', 26);
+    }
+    window.scrollTo({ top:0, behavior:'instant' in window ? 'instant' : 'auto' });
+  }
+  let phActionToast = '';
+  function goToDashboard(){ activeNav = 'dashboard'; renderNav(); renderView(); }
+  document.getElementById('ph-back').addEventListener('click', goToDashboard);
+  document.getElementById('btn-pay-back').addEventListener('click', goToDashboard);
+  document.getElementById('ph-action').addEventListener('click', function(){
+    if (activeNav === 'api-logs'){
+      const url = 'https://api.rustpay.com/v1';
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(function(){ showToast('Copied '+url+' to your clipboard.'); })
+          .catch(function(){ showToast(phActionToast); });
+        return;
+      }
+    }
+    showToast(phActionToast);
+  });
+
+  /* ============ MOBILE SIDEBAR ============ */
+  const sidebar = document.getElementById('sidebar');
+  const scrim = document.getElementById('scrim');
+  function openSidebarMobile(){ sidebar.classList.add('open'); scrim.classList.add('show'); }
+  function closeSidebarMobile(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+  document.getElementById('btn-hamburger').addEventListener('click', openSidebarMobile);
+  scrim.addEventListener('click', closeSidebarMobile);
+
+  /* ============ TOP MENUS ============ */
+  function setupMenu(btnId, menuId){
+    const btn = document.getElementById(btnId);
+    const menu = document.getElementById(menuId);
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      const willOpen = !menu.classList.contains('open');
+      document.querySelectorAll('.menu.open').forEach(function(m){ m.classList.remove('open'); });
+      closeAllDropdowns(null);
+      if (willOpen){ menu.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
+      else btn.setAttribute('aria-expanded','false');
+    });
+  }
+  setupMenu('btn-alerts','menu-alerts');
+  setupMenu('btn-user','menu-user');
+  document.addEventListener('click', function(){
+    document.querySelectorAll('.menu.open').forEach(function(m){ m.classList.remove('open'); });
+    document.getElementById('btn-alerts').setAttribute('aria-expanded','false');
+    document.getElementById('btn-user').setAttribute('aria-expanded','false');
+  });
+  document.getElementById('btn-upgrade').addEventListener('click', function(){
+    showToast('Thanks for your interest — our team will email you to complete the upgrade to Pro.');
+  });
+  document.getElementById('btn-viewall').addEventListener('click', function(){
+    activeNav = 'payments'; renderNav(); renderView();
+  });
+
+  /* ============ PROFILE MENU / SIGN OUT ============ */
+  document.getElementById('menu-profile').addEventListener('click', function(){
+    activeNav = 'settings'; renderNav(); renderView();
+  });
+  document.getElementById('menu-account').addEventListener('click', function(){
+    activeNav = 'settings'; renderNav(); renderView();
+  });
+  document.getElementById('btn-logout').addEventListener('click', function(){
+    const overlay = document.getElementById('signout-overlay');
+    overlay.classList.add('show');
+    setTimeout(function(){ window.location.reload(); }, 900);
+  });
+
+  /* ============ CSV EXPORT ============ */
+  function csvField(value){
+    const s = String(value);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function csvRow(fields){ return fields.map(csvField).join(',') + '\r\n'; }
+
+  function downloadCsvViaBlob(filename, csvText){
+    const blob = new Blob(['﻿' + csvText], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  // Inside the Claude artifact viewer, frame code cannot trigger a browser
+  // download directly, so this offers the file through the platform's
+  // downloads capability (declared as capabilities.downloads on publish);
+  // opened as a plain local file it falls back to a normal <a download>.
+  async function offerCsvDownload(filename, csvText){
+    if (window.claude && typeof window.claude.use === 'function'){
+      try {
+        const downloads = await window.claude.use('downloads');
+        if (downloads){
+          try {
+            await downloads.save({ filename: filename, data: '﻿' + csvText });
+            showToast('Downloaded '+filename);
+            return;
+          } catch (err){
+            const code = err && err.code;
+            if (code === 'declined') return;
+            if (code === 'rate_limited'){ showToast('A save prompt is already open — try again in a moment.'); return; }
+            // any other rejection: fall through to the local-file fallback below
+          }
+        }
+      } catch (e){ /* capability unavailable here — fall through */ }
+    }
+    downloadCsvViaBlob(filename, csvText);
+    showToast('Downloaded '+filename);
+  }
+
+  function buildMonthlyReportCsv(){
+    const d = MONTH_DATA[currentMonth];
+    let csv = '';
+    csv += csvRow(['RustPay monthly report']);
+    csv += csvRow(['Month', d.label]);
+    csv += csvRow(['Currency', currentCurrency]);
+    csv += csvRow(['Generated', new Date().toISOString().slice(0,10)]);
+    csv += '\r\n';
+    csv += csvRow(['Metric','Value']);
+    csv += csvRow(['Recovered via retry', fmtInt(d.recovered)]);
+    csv += csvRow(['Overall auth. rate', d.authRate.toFixed(2)+'%']);
+    csv += csvRow(['Transactions per month', fmtInt(d.tx)]);
+    csv += csvRow(['Revenue ('+currentCurrency+')', fmtMoneyWhole(d.revenue)]);
+    csv += '\r\n';
+    csv += csvRow(['ID','Customer','Amount','Currency','Status','Method','Date']);
+    ALL_TRANSACTIONS.forEach(function(t){
+      csv += csvRow(['#'+t.id, t.name, fmtMoney(t.amount), currentCurrency, t.status, METHOD_LABELS[t.method], t.date]);
+    });
+    return csv;
+  }
+  function exportMonthlyReport(){
+    const csv = buildMonthlyReportCsv();
+    const filename = 'rustpay-report-'+currentMonth+'.csv';
+    offerCsvDownload(filename, csv);
+  }
+  document.getElementById('btn-export').addEventListener('click', exportMonthlyReport);
+  document.getElementById('btn-pay-export').addEventListener('click', exportMonthlyReport);
+
+  /* ============ KPI RENDER ============ */
+  function deltaHtml(delta){
+    const up = delta >= 0;
+    return '<span class="kpi-delta '+(up?'up':'down')+'">'+
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">'+
+        (up ? '<path d="M12 19V5M6 11l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/>' : '<path d="M12 5v14M6 13l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>') +
+      '</svg>'+Math.abs(delta).toFixed(1)+'%</span> <span class="kpi-delta-note">from last month</span>';
+  }
+  function renderKpis(){
+    const d = MONTH_DATA[currentMonth];
+    const cards = [
+      { label:'Recovered via retry', value: fmtInt(d.recovered), delta:d.recoveredDelta, bg:'var(--accent-soft)', fg:'var(--series-bank)', ic:'payments' },
+      { label:'Overall auth. rate', value: d.authRate.toFixed(2)+'%', delta:d.authDelta, bg:'var(--good-bg)', fg:'var(--good-text)', ic:'help' },
+      { label:'Transactions per month', value: fmtInt(d.tx), delta:d.txDelta, bg:'var(--warning-bg)', fg:'var(--series-wallets)', ic:'reconciliation' },
+      { label:'Revenue ('+currentCurrency+')', value: fmtMoneyWhole(d.revenue), delta:d.revenueDelta, bg:'var(--accent-soft)', fg:'var(--series-cards)', ic:'insights' }
+    ];
+    const iconSvgs = {
+      payments:'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M2.5 10.2h19"/>',
+      help:'<path d="M12 3.5 4.5 6.5v5c0 5 3.2 7.7 7.5 9 4.3-1.3 7.5-4 7.5-9v-5Z" stroke-linejoin="round"/><path d="m8.7 12 2.2 2.2 4.4-4.4" stroke-linecap="round" stroke-linejoin="round"/>',
+      reconciliation:'<path d="M4 8h13M4 8l3-3M4 8l3 3M20 16H7M20 16l-3-3M20 16l-3 3" stroke-linecap="round" stroke-linejoin="round"/>',
+      insights:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.2 2" stroke-linecap="round" stroke-linejoin="round"/>'
+    };
+    document.getElementById('kpi-grid').innerHTML = cards.map(function(c){
+      return '<div class="kpi-card">'+
+        '<div class="kpi-top">'+
+          '<div class="kpi-icon" style="background:'+c.bg+';color:'+c.fg+'"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">'+iconSvgs[c.ic]+'</svg></div>'+
+          '<div class="kpi-label">'+c.label+'</div>'+
+        '</div>'+
+        '<div class="kpi-value tnum">'+c.value+'</div>'+
+        '<div>'+deltaHtml(c.delta)+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  /* ============ LINE CHART ============ */
+  const tooltip = document.getElementById('chart-tooltip');
+  function renderLineChart(){
+    const data = currentPeriod === 'monthly' ? LINE_MONTHLY : LINE_WEEKLY;
+    const wrap = document.getElementById('linechart-wrap');
+    const W = 640, H = 280, padL = 46, padR = 14, padT = 14, padB = 26;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const maxVal = currentPeriod === 'monthly' ? 1250000 : 250000;
+    const steps = currentPeriod === 'monthly' ? [0,250000,500000,750000,1000000,1250000] : [0,50000,100000,150000,200000,250000];
+
+    function x(i){ return padL + (i/(data.length-1)) * plotW; }
+    function y(v){ return padT + plotH - (v/maxVal) * plotH; }
+
+    let gridHtml = '';
+    steps.forEach(function(v){
+      const yy = y(v);
+      gridHtml += '<line class="grid-line" x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'"/>';
+      gridHtml += '<text class="axis-label" x="'+(padL-10)+'" y="'+(yy+3.5)+'" text-anchor="end">'+(v>=1000000?(v/1000000)+'M':v>=1000?(v/1000)+'K':v)+'</text>';
+    });
+    let xLabelsHtml = '';
+    data.forEach(function(d,i){
+      xLabelsHtml += '<text class="axis-label" x="'+x(i)+'" y="'+(H-6)+'" text-anchor="middle">'+d.label+'</text>';
+    });
+
+    let linePath = 'M'; let areaPath = 'M'+x(0)+' '+y(0)+' ';
+    data.forEach(function(d,i){
+      linePath += (i===0?'':'L') + x(i) + ' ' + y(d.value) + ' ';
+      areaPath += 'L'+x(i)+' '+y(d.value)+' ';
+    });
+    areaPath += 'L'+x(data.length-1)+' '+y(0)+' Z';
+
+    let dotsHtml = '';
+    let hitsHtml = '';
+    data.forEach(function(d,i){
+      const isLast = i === data.length-1;
+      dotsHtml += '<circle class="pt-dot'+(isLast?' endpoint':'')+'" cx="'+x(i)+'" cy="'+y(d.value)+'" r="'+(isLast?6:5)+'"/>';
+      hitsHtml += '<rect class="pt-hit" data-i="'+i+'" x="'+(x(i)-(plotW/data.length/2))+'" y="'+padT+'" width="'+(plotW/data.length)+'" height="'+plotH+'"/>';
+    });
+
+    wrap.innerHTML =
+      '<svg class="linechart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Successful payments over time">'+
+        '<defs><linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">'+
+          '<stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28"/>'+
+          '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>'+
+        '</linearGradient></defs>'+
+        gridHtml + xLabelsHtml +
+        '<path class="area-fill" d="'+areaPath+'"/>'+
+        '<path class="line-path" d="'+linePath+'"/>'+
+        '<line class="crosshair" id="crosshair" x1="0" y1="'+padT+'" x2="0" y2="'+(padT+plotH)+'"/>'+
+        dotsHtml + hitsHtml +
+      '</svg>';
+
+    const svg = wrap.querySelector('svg');
+    const crosshair = wrap.querySelector('#crosshair');
+    wrap.querySelectorAll('.pt-hit').forEach(function(hit){
+      hit.addEventListener('mousemove', function(){
+        const i = +hit.getAttribute('data-i');
+        const d = data[i];
+        const px = x(i), py = y(d.value);
+        crosshair.setAttribute('x1', px); crosshair.setAttribute('x2', px);
+        crosshair.classList.add('show');
+        const rect = svg.getBoundingClientRect();
+        const wrapRect = wrap.getBoundingClientRect();
+        const scale = rect.width / W;
+        tooltip.style.left = (rect.left - wrapRect.left + px*scale) + 'px';
+        tooltip.style.top = (rect.top - wrapRect.top + py*scale) + 'px';
+        tooltip.innerHTML = fmtInt(d.value) + ' payments<div class="tt-sub">'+d.label+(currentPeriod==='monthly'?' 2025':' · May 2025')+'</div>';
+        tooltip.classList.add('show');
+      });
+      hit.addEventListener('mouseleave', function(){
+        crosshair.classList.remove('show');
+        tooltip.classList.remove('show');
+      });
+    });
+  }
+
+  /* ============ DONUT CHARTS ============ */
+  function buildDonut(containerId, dataArr, orderKeys, totalLabel, totalSub){
+    const container = document.getElementById(containerId);
+    const size = 168, stroke = 24, r = (size - stroke)/2, cx = size/2, cy = size/2;
+    const circumference = 2*Math.PI*r;
+    const gap = 3; // px gap between segments
+
+    const ordered = orderKeys.map(function(k){ return dataArr.find(function(d){ return d.key===k; }); });
+
+    let cumulative = 0;
+    let segsHtml = '';
+    ordered.forEach(function(seg, idx){
+      const segLen = (seg.pct/100) * circumference;
+      const dash = Math.max(segLen - gap, 0.001);
+      const dashArray = dash + ' ' + (circumference - dash);
+      const dashOffset = -cumulative;
+      segsHtml += '<circle class="donut-seg" data-key="'+seg.key+'" cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+seg.color+'" stroke-width="'+stroke+'" stroke-dasharray="'+dashArray+'" stroke-dashoffset="'+dashOffset+'" transform="rotate(-90 '+cx+' '+cy+')"/>';
+      cumulative += segLen;
+    });
+
+    container.innerHTML =
+      '<div class="donut-wrap">'+
+        '<svg viewBox="0 0 '+size+' '+size+'" role="img" aria-label="'+totalSub+' breakdown">'+segsHtml+'</svg>'+
+        '<div class="donut-center"><span class="num tnum">'+totalLabel+'</span><span class="lbl">'+totalSub+'</span></div>'+
+      '</div>'+
+      '<div class="legend">'+
+        dataArr.map(function(d){
+          return '<div class="legend-row" data-key="'+d.key+'">'+
+            '<span class="legend-dot" style="background:'+d.color+'"></span>'+
+            '<span class="legend-label">'+d.label+'</span>'+
+            '<span class="legend-pct tnum">'+d.pct.toFixed(1)+'%</span>'+
+          '</div>';
+        }).join('') +
+      '</div>';
+
+    const rows = container.querySelectorAll('.legend-row');
+    const segs = container.querySelectorAll('.donut-seg');
+    function setActive(key){
+      rows.forEach(function(row){
+        const isMatch = row.getAttribute('data-key') === key;
+        row.classList.toggle('active', !!key && isMatch);
+        row.classList.toggle('dim', !!key && !isMatch);
+      });
+      segs.forEach(function(seg){
+        const isMatch = seg.getAttribute('data-key') === key;
+        seg.classList.toggle('dim', !!key && !isMatch);
+      });
+    }
+    rows.forEach(function(row){
+      row.addEventListener('mouseenter', function(){ setActive(row.getAttribute('data-key')); });
+      row.addEventListener('mouseleave', function(){ setActive(null); });
+    });
+    segs.forEach(function(seg){
+      seg.addEventListener('mouseenter', function(e){
+        setActive(seg.getAttribute('data-key'));
+        const d = dataArr.find(function(x){ return x.key === seg.getAttribute('data-key'); });
+        const wrapRect = container.getBoundingClientRect();
+        tooltip.style.left = (e.clientX - wrapRect.left) + 'px';
+        tooltip.style.top = (e.clientY - wrapRect.top) + 'px';
+        tooltip.innerHTML = d.label + '<div class="tt-sub">'+d.pct.toFixed(1)+'% of '+totalLabel+'</div>';
+        tooltip.classList.add('show');
+      });
+      seg.addEventListener('mousemove', function(e){
+        const wrapRect = container.getBoundingClientRect();
+        tooltip.style.left = (e.clientX - wrapRect.left) + 'px';
+        tooltip.style.top = (e.clientY - wrapRect.top) + 'px';
+      });
+      seg.addEventListener('mouseleave', function(){ setActive(null); tooltip.classList.remove('show'); });
+    });
+  }
+  function renderDonuts(){
+    buildDonut('donut-methods', METHOD_MIX, ['cards','bnpl','bank','wallets','cash','other'], '12.8M', 'Transactions');
+    const statusData = currentStatusPeriod === 'this' ? STATUS_MIX_THIS : STATUS_MIX_LAST;
+    buildDonut('donut-status', statusData, ['successful','failed','pending','refunded'], currentStatusPeriod==='this' ? '12.8M' : '11.9M', 'Transactions');
+  }
+
+  /* ============ TABLE ============ */
+  const PILL_CLASS = { Successful:'good', Failed:'critical', Pending:'warning' };
+  function txRowHtml(t, showMethod){
+    return '<tr>'+
+      '<td class="muted-cell tnum">#'+t.id+'</td>'+
+      '<td><div class="cust"><span class="avatar" style="background:'+initialsColor(t.name)+'">'+initials(t.name)+'</span>'+t.name+'</div></td>'+
+      '<td class="tnum">'+fmtMoney(t.amount)+'</td>'+
+      '<td><span class="pill '+PILL_CLASS[t.status]+'">'+t.status+'</span></td>'+
+      (showMethod ? '<td class="muted-cell">'+METHOD_LABELS[t.method]+'</td>' : '')+
+      '<td class="muted-cell">'+t.date+'</td>'+
+    '</tr>';
+  }
+  let statusFilter = 'all';
+  let methodFilter = 'all';
+  function renderTable(){
+    const body = document.getElementById('tx-body');
+    const rows = TRANSACTIONS.filter(function(t){
+      const okStatus = statusFilter === 'all' || t.status.toLowerCase() === statusFilter;
+      const okMethod = methodFilter === 'all' || t.method === methodFilter;
+      return okStatus && okMethod;
+    });
+    if (!rows.length){
+      body.innerHTML = '<tr class="empty-row"><td colspan="5">No transactions match these filters.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function(t){ return txRowHtml(t, false); }).join('');
+  }
+
+  let payStatusFilter = 'all';
+  let payMethodFilter = 'all';
+  function renderPaymentsTable(){
+    const body = document.getElementById('payments-tx-body');
+    const rows = ALL_TRANSACTIONS.filter(function(t){
+      const okStatus = payStatusFilter === 'all' || t.status.toLowerCase() === payStatusFilter;
+      const okMethod = payMethodFilter === 'all' || t.method === payMethodFilter;
+      return okStatus && okMethod;
+    });
+    document.getElementById('payments-tx-count').textContent =
+      'Showing '+rows.length+' of '+ALL_TRANSACTIONS.length+' transactions';
+    if (!rows.length){
+      body.innerHTML = '<tr class="empty-row"><td colspan="6">No transactions match these filters.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function(t){ return txRowHtml(t, true); }).join('');
+  }
+
+  /* ============ DROPDOWN SETUP ============ */
+  function setupAllDropdowns(){
+    setupDropdown('dd-month', MONTHS.map(function(m){ return { value:m, text: MONTH_DATA[m].label }; }), {
+      selected: currentMonth,
+      onChange: function(val){ currentMonth = val; renderKpis(); }
+    });
+    setupDropdown('dd-country', [
+      { value:'gb', text:'United Kingdom' },{ value:'us', text:'United States' },{ value:'de', text:'Germany' },{ value:'in', text:'India' }
+    ], { selected:'gb', labelPrefix:'Country: ', onChange: function(){} });
+    setupDropdown('dd-currency', [
+      { value:'GBP', text:'GBP' },{ value:'USD', text:'USD' },{ value:'EUR', text:'EUR' }
+    ], { selected:currentCurrency, labelPrefix:'Currency: ', onChange: function(val){ currentCurrency = val; renderKpis(); renderTable(); } });
+    setupDropdown('dd-method', [
+      { value:'all', text:'All methods' },{ value:'cards', text:'Cards' },{ value:'bank', text:'Bank Transfer' },{ value:'wallets', text:'Digital Wallets' },{ value:'cash', text:'Cash' }
+    ], { selected:'all', onChange: function(val,found){
+      methodFilter = val;
+      document.querySelector('#dd-method .dd-label').textContent = val==='all' ? 'Payment method' : found.text;
+      renderTable();
+    } });
+    setupDropdown('dd-status', [
+      { value:'all', text:'All statuses' },{ value:'successful', text:'Successful' },{ value:'failed', text:'Failed' },{ value:'pending', text:'Pending' }
+    ], { selected:'all', onChange: function(val,found){
+      statusFilter = val;
+      document.querySelector('#dd-status .dd-label').textContent = val==='all' ? 'Status' : found.text;
+      renderTable();
+    } });
+    setupDropdown('dd-period', [
+      { value:'monthly', text:'Monthly' },{ value:'weekly', text:'Weekly' }
+    ], { selected:currentPeriod, onChange: function(val){ currentPeriod = val; renderLineChart(); } });
+    setupDropdown('dd-statusperiod', [
+      { value:'this', text:'This month' },{ value:'last', text:'Last month' }
+    ], { selected:currentStatusPeriod, onChange: function(val){ currentStatusPeriod = val; renderDonuts(); } });
+    setupDropdown('dd-pay-method', [
+      { value:'all', text:'All methods' },{ value:'cards', text:'Cards' },{ value:'bank', text:'Bank Transfer' },{ value:'wallets', text:'Digital Wallets' },{ value:'cash', text:'Cash' }
+    ], { selected:'all', onChange: function(val,found){
+      payMethodFilter = val;
+      document.querySelector('#dd-pay-method .dd-label').textContent = val==='all' ? 'Payment method' : found.text;
+      renderPaymentsTable();
+    } });
+    setupDropdown('dd-pay-status', [
+      { value:'all', text:'All statuses' },{ value:'successful', text:'Successful' },{ value:'failed', text:'Failed' },{ value:'pending', text:'Pending' }
+    ], { selected:'all', onChange: function(val,found){
+      payStatusFilter = val;
+      document.querySelector('#dd-pay-status .dd-label').textContent = val==='all' ? 'Status' : found.text;
+      renderPaymentsTable();
+    } });
+  }
+
+  /* ============ INIT ============ */
+  renderNav();
+  renderView();
+  renderKpis();
+  renderLineChart();
+  renderDonuts();
+  renderTable();
+  setupAllDropdowns();
+
+  window.addEventListener('resize', function(){ renderLineChart(); });
+})();
+</script>
+</body>
+</html>
