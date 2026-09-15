@@ -61,7 +61,23 @@ module.exports = async (req, res) => {
       return;
     }
 
-    res.setHeader('Allow', 'GET, POST');
+    if (req.method === 'DELETE') {
+      const token = req.headers['x-admin-token'];
+      if (!token || token !== process.env.ADMIN_TOKEN) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      const id = Number((req.query && req.query.id) || '');
+      if (!Number.isInteger(id) || id <= 0) {
+        res.status(400).json({ error: 'Invalid id.' });
+        return;
+      }
+      await sql`DELETE FROM transactions WHERE id = ${id}`;
+      res.status(200).json({ deleted: id });
+      return;
+    }
+
+    res.setHeader('Allow', 'GET, POST, DELETE');
     res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

@@ -467,6 +467,12 @@
   .pill.critical{ background:var(--critical-bg); color:var(--critical-text); }
   .pill.warning{ background:var(--warning-bg); color:var(--warning-text); }
   .pill.neutral{ background:var(--neutral-bg); color:var(--neutral-text); }
+  .row-delete-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:28px; height:28px; border-radius:8px; border:1px solid transparent;
+    background:none; color:var(--text-muted); cursor:pointer;
+  }
+  .row-delete-btn:hover{ background:var(--critical-bg); color:var(--critical-text); }
   .muted-cell{ color:var(--text-muted); }
   .empty-row td{ text-align:center; padding:28px 10px; color:var(--text-muted); font-size:13px; }
 
@@ -786,7 +792,7 @@
           <div class="table-scroll">
             <table class="tx">
               <thead>
-                <tr><th>ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Method</th><th>Date</th></tr>
+                <tr><th>ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Method</th><th>Date</th><th></th></tr>
               </thead>
               <tbody id="payments-tx-body"></tbody>
             </table>
@@ -1515,6 +1521,7 @@
       '<td><span class="pill '+PILL_CLASS[t.status]+'">'+t.status+'</span></td>'+
       (showMethod ? '<td class="muted-cell">'+METHOD_LABELS[t.method]+'</td>' : '')+
       '<td class="muted-cell">'+t.date+'</td>'+
+      (showMethod ? '<td><button type="button" class="row-delete-btn" data-id="'+t.id+'" title="Delete transaction" aria-label="Delete transaction"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>' : '')+
     '</tr>';
   }
   let statusFilter = 'all';
@@ -1545,7 +1552,7 @@
     document.getElementById('payments-tx-count').textContent =
       'Showing '+rows.length+' of '+ALL_TRANSACTIONS.length+' transactions';
     if (!rows.length){
-      body.innerHTML = '<tr class="empty-row"><td colspan="6">'+(ALL_TRANSACTIONS.length ? 'No transactions match these filters.' : 'No transactions yet — click "Add transaction" to create the first one.')+'</td></tr>';
+      body.innerHTML = '<tr class="empty-row"><td colspan="7">'+(ALL_TRANSACTIONS.length ? 'No transactions match these filters.' : 'No transactions yet — click "Add transaction" to create the first one.')+'</td></tr>';
       return;
     }
     body.innerHTML = rows.map(function(t){ return txRowHtml(t, true); }).join('');
@@ -1711,6 +1718,35 @@
       submitBtn.disabled = false;
     }
   }
+  async function deleteTransaction(id){
+    if (!window.confirm('Delete transaction #'+id+'? This cannot be undone.')) return;
+    let token = getAdminToken(true);
+    if (!token) return;
+    try {
+      const res = await fetch('/api/transactions?id='+encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'x-admin-token': token }
+      });
+      if (res.status === 401){
+        try { localStorage.removeItem(ADMIN_TOKEN_KEY); } catch(e){}
+        showToast('Incorrect admin token.');
+        return;
+      }
+      if (!res.ok){ showToast('Could not delete that transaction.'); return; }
+      ALL_TRANSACTIONS = ALL_TRANSACTIONS.filter(function(t){ return t.id !== String(id); });
+      const months = getAvailableMonths();
+      if (!currentMonth || !months.includes(currentMonth)) currentMonth = months[0] || null;
+      setupAllDropdowns();
+      renderAll();
+      showToast('Transaction deleted.');
+    } catch (e){
+      showToast('Network error — please try again.');
+    }
+  }
+  document.getElementById('payments-tx-body').addEventListener('click', function(e){
+    const btn = e.target.closest('.row-delete-btn');
+    if (btn) deleteTransaction(btn.getAttribute('data-id'));
+  });
   document.getElementById('btn-add-tx').addEventListener('click', openAddTxModal);
   document.getElementById('tx-cancel').addEventListener('click', closeAddTxModal);
   document.getElementById('tx-submit').addEventListener('click', submitAddTx);
