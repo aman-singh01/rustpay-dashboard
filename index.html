@@ -1062,6 +1062,10 @@
     const btn = root.querySelector('.dropdown-btn');
     const menu = root.querySelector('.dropdown-menu');
     const labelEl = btn.querySelector('.dd-label');
+    if (opts.syncInitialLabel){
+      const initialMatch = options.find(function(o){ return o.value === opts.selected; });
+      if (initialMatch) labelEl.textContent = opts.labelPrefix ? opts.labelPrefix + initialMatch.text : initialMatch.text;
+    }
     menu.innerHTML = options.map(function(o){
       return '<button type="button" class="dropdown-option'+(o.value===opts.selected?' selected':'')+'" data-value="'+o.value+'">'+
         '<span>'+o.text+'</span>'+
@@ -1552,6 +1556,7 @@
     const months = getAvailableMonths();
     setupDropdown('dd-month', months.length ? months.map(function(m){ return { value:m, text: monthKeyToLabel(m) }; }) : [{ value:'', text:'No data yet' }], {
       selected: currentMonth || '',
+      syncInitialLabel: true,
       onChange: function(val){ currentMonth = val; renderAll(); }
     });
     setupDropdown('dd-country', [
