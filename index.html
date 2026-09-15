@@ -466,6 +466,7 @@
   .pill.good{ background:var(--good-bg); color:var(--good-text); }
   .pill.critical{ background:var(--critical-bg); color:var(--critical-text); }
   .pill.warning{ background:var(--warning-bg); color:var(--warning-text); }
+  .pill.neutral{ background:var(--neutral-bg); color:var(--neutral-text); }
   .muted-cell{ color:var(--text-muted); }
   .empty-row td{ text-align:center; padding:28px 10px; color:var(--text-muted); font-size:13px; }
 
@@ -484,6 +485,28 @@
   .placeholder-actions{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; justify-content:center; }
 
   .table-footnote{ margin-top:12px; font-size:12px; color:var(--text-muted); text-align:right; }
+  .no-data-note{ color:var(--text-muted); font-size:12.5px; padding:28px 4px; text-align:center; width:100%; }
+  .kpi-delta-empty{ color:var(--text-muted); font-weight:600; }
+
+  /* Modal */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(15,10,35,0.5); z-index:70;
+    display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-backdrop.show{ display:flex; }
+  .modal-card{
+    background:var(--surface); border-radius:16px; padding:22px; width:100%; max-width:420px;
+    box-shadow:var(--shadow-lg); display:flex; flex-direction:column; gap:14px;
+  }
+  .modal-title{ font-size:16px; font-weight:700; }
+  .form-field{ display:flex; flex-direction:column; gap:5px; }
+  .form-field label{ font-size:12px; font-weight:700; color:var(--text-secondary); }
+  .form-field input, .form-field select{
+    padding:9px 11px; border-radius:9px; border:1px solid var(--border);
+    background:var(--surface-alt); color:var(--text-primary); font-size:13px; font-family:inherit;
+  }
+  .form-error{ color:var(--critical-text); font-size:12px; font-weight:600; min-height:16px; }
+  .modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
 
   /* Sign-out overlay */
   .signout-overlay{
@@ -667,7 +690,7 @@
             <div class="panel-head">
               <div>
                 <div class="panel-title">Successful payments</div>
-                <div class="panel-sub">In the last month</div>
+                <div class="panel-sub" id="chart-period-label">For the selected month</div>
               </div>
               <div class="dropdown" id="dd-period">
                 <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
@@ -684,7 +707,7 @@
             <div class="panel-head">
               <div>
                 <div class="panel-title">Payment method overview</div>
-                <div class="panel-sub">In the last month</div>
+                <div class="panel-sub" id="method-period-label">For the selected month</div>
               </div>
             </div>
             <div class="donut-row" id="donut-methods"></div>
@@ -710,13 +733,7 @@
           <div class="panel">
             <div class="panel-head">
               <div class="panel-title">Transaction status</div>
-              <div class="dropdown" id="dd-statusperiod">
-                <button class="dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
-                  <span class="dd-label">This month</span>
-                  <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <div class="dropdown-menu" role="listbox"></div>
-              </div>
+              <div class="panel-sub" id="status-period-label">For the selected month</div>
             </div>
             <div class="donut-row" id="donut-status"></div>
           </div>
@@ -734,6 +751,10 @@
             <button class="btn-secondary" id="btn-pay-back" type="button">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5 4 12l7 7M4 12h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
               Dashboard
+            </button>
+            <button class="btn-secondary" id="btn-add-tx" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+              Add transaction
             </button>
             <button class="btn-primary" id="btn-pay-export" type="button">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v13m0 0 4.5-4.5M12 16 7.5 11.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19.5h16" stroke-linecap="round"/></svg>
@@ -799,6 +820,47 @@
   <div class="signout-text">Signing you out…</div>
 </div>
 
+<div class="modal-backdrop" id="add-tx-backdrop">
+  <div class="modal-card" role="dialog" aria-label="Add transaction">
+    <div class="modal-title">Add transaction</div>
+    <div class="form-field">
+      <label for="tx-name">Customer name</label>
+      <input type="text" id="tx-name" maxlength="120" placeholder="e.g. Priya Sharma">
+    </div>
+    <div class="form-field">
+      <label for="tx-amount">Amount (GBP)</label>
+      <input type="number" id="tx-amount" min="0.01" step="0.01" placeholder="0.00">
+    </div>
+    <div class="form-field">
+      <label for="tx-status">Status</label>
+      <select id="tx-status">
+        <option value="Successful">Successful</option>
+        <option value="Failed">Failed</option>
+        <option value="Pending">Pending</option>
+        <option value="Refunded">Refunded</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="tx-method">Payment method</label>
+      <select id="tx-method">
+        <option value="cards">Cards</option>
+        <option value="bank">Bank Transfer</option>
+        <option value="wallets">Digital Wallets</option>
+        <option value="cash">Cash</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="tx-date">Date</label>
+      <input type="date" id="tx-date">
+    </div>
+    <div class="form-error" id="tx-form-error"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="tx-cancel" type="button">Cancel</button>
+      <button class="btn-primary" id="tx-submit" type="button">Save transaction</button>
+    </div>
+  </div>
+</div>
+
 <div class="chart-tooltip" id="chart-tooltip"></div>
 <div class="toast-stack" id="toast-stack"></div>
 
@@ -859,90 +921,104 @@
     help: ['Help & Support', 'Search the RustPay knowledge base, or open a ticket and our support team will follow up.', 'Contact support', 'Ticket opened — support usually replies within a few hours.']
   };
 
-  /* ============ MONTH / KPI DATA ============ */
-  const MONTHS = ['2025-02','2025-03','2025-04','2025-05','2025-06','2025-07'];
-  const MONTH_DATA = {
-    '2025-02': { label:'February 2025', recovered:158200, recoveredDelta:8.1, authRate:92.3, authDelta:1.6, tx:8894213, txDelta:3.4, revenue:9540210, revenueDelta:5.2 },
-    '2025-03': { label:'March 2025',    recovered:161900, recoveredDelta:2.3, authRate:91.9, authDelta:-0.4, tx:8650190, txDelta:-2.6, revenue:9380500, revenueDelta:-1.7 },
-    '2025-04': { label:'April 2025',    recovered:171200, recoveredDelta:5.7, authRate:93.1, authDelta:1.3, tx:9120876, txDelta:5.4, revenue:10230870, revenueDelta:9.1 },
-    '2025-05': { label:'May 2025',      recovered:182350, recoveredDelta:12.4, authRate:94.18, authDelta:3.2, tx:9842301, txDelta:-2.6, revenue:11245670, revenueDelta:9.1 },
-    '2025-06': { label:'June 2025',     recovered:196400, recoveredDelta:7.7, authRate:94.6, authDelta:0.4, tx:10120655, txDelta:2.8, revenue:11860430, revenueDelta:5.5 },
-    '2025-07': { label:'July 2025',     recovered:189700, recoveredDelta:-3.4, authRate:94.0, authDelta:-0.6, tx:9765320, txDelta:-3.5, revenue:11510980, revenueDelta:-2.9 }
-  };
-  let currentMonth = '2025-05';
+  /* ============ LIVE DATA (fetched from /api/transactions) ============ */
+  let ALL_TRANSACTIONS = [];
+  let currentMonth = null;
   let currentCurrency = 'GBP';
   const CURRENCY = {
     GBP:{ symbol:'£', rate:1 },
     USD:{ symbol:'$', rate:1.27 },
     EUR:{ symbol:'€', rate:1.17 }
   };
-
-  const LINE_MONTHLY = [
-    { label:'Jan', value:400000 },
-    { label:'Feb', value:510000 },
-    { label:'Mar', value:430000 },
-    { label:'Apr', value:690000 },
-    { label:'May', value:780000 },
-    { label:'Jun', value:1060000 }
-  ];
-  const LINE_WEEKLY = [
-    { label:'Wk 1', value:172000 },
-    { label:'Wk 2', value:205000 },
-    { label:'Wk 3', value:189000 },
-    { label:'Wk 4', value:214000 }
-  ];
   let currentPeriod = 'monthly';
 
-  const METHOD_MIX = [
-    { key:'cards', label:'Cards', pct:34.2, color:'var(--series-cards)' },
-    { key:'bnpl', label:'Buy Now, Pay Later', pct:12.4, color:'var(--series-bnpl)' },
-    { key:'bank', label:'Bank Transfer', pct:26.8, color:'var(--series-bank)' },
-    { key:'wallets', label:'Digital Wallets', pct:18.6, color:'var(--series-wallets)' },
-    { key:'cash', label:'Cash', pct:6.1, color:'var(--series-cash)' },
-    { key:'other', label:'Others', pct:2.0, color:'var(--series-other)' }
-  ];
-  const METHOD_LEGEND_ORDER = ['cards','bank','wallets','bnpl','cash','other'];
+  const METHOD_LABELS = { cards:'Cards', bank:'Bank Transfer', wallets:'Digital Wallets', cash:'Cash' };
+  const METHOD_COLORS = { cards:'var(--series-cards)', bank:'var(--series-bank)', wallets:'var(--series-wallets)', cash:'var(--series-cash)' };
+  const METHOD_ORDER = ['cards','bank','wallets','cash'];
+  const STATUS_LABELS = { Successful:'Successful', Failed:'Failed', Pending:'Pending', Refunded:'Refunded' };
+  const STATUS_COLORS = { Successful:'var(--status-good)', Failed:'var(--status-critical)', Pending:'var(--status-warning)', Refunded:'var(--series-other)' };
+  const STATUS_ORDER = ['Successful','Failed','Pending','Refunded'];
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  const STATUS_MIX_THIS = [
-    { key:'successful', label:'Successful', pct:72.3, color:'var(--status-good)' },
-    { key:'failed', label:'Failed', pct:14.8, color:'var(--status-critical)' },
-    { key:'pending', label:'Pending', pct:8.6, color:'var(--status-warning)' },
-    { key:'refunded', label:'Refunded', pct:4.3, color:'var(--series-other)' }
-  ];
-  const STATUS_MIX_LAST = [
-    { key:'successful', label:'Successful', pct:69.1, color:'var(--status-good)' },
-    { key:'failed', label:'Failed', pct:17.2, color:'var(--status-critical)' },
-    { key:'pending', label:'Pending', pct:9.4, color:'var(--status-warning)' },
-    { key:'refunded', label:'Refunded', pct:4.3, color:'var(--series-other)' }
-  ];
-  let currentStatusPeriod = 'this';
+  /* ---- date helpers ---- */
+  function isoMonthKey(iso){ return iso.slice(0,7); }
+  function monthKeyToLabel(key){
+    const [y,m] = key.split('-').map(Number);
+    return MONTH_NAMES[m-1] + ' ' + y;
+  }
+  function prevMonthKey(key){
+    const [y,m] = key.split('-').map(Number);
+    const d = new Date(Date.UTC(y, m-2, 1));
+    return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0');
+  }
+  function daysInMonth(key){
+    const [y,m] = key.split('-').map(Number);
+    return new Date(Date.UTC(y, m, 0)).getUTCDate();
+  }
+  function formatDisplayDate(iso){
+    const [y,m,d] = iso.split('-').map(Number);
+    return MONTH_NAMES[m-1] + ' ' + d + ', ' + y;
+  }
 
-  const TRANSACTIONS = [
-    { id:'785210', name:'Olivia Carter', amount:1250.00, status:'Successful', date:'May 28, 2025', method:'cards' },
-    { id:'785209', name:'Liam Smith', amount:320.00, status:'Failed', date:'May 28, 2025', method:'bank' },
-    { id:'785208', name:'Emma Johnson', amount:980.00, status:'Successful', date:'May 27, 2025', method:'wallets' },
-    { id:'785207', name:'Noah Brown', amount:640.00, status:'Pending', date:'May 26, 2025', method:'cash' },
-    { id:'785206', name:'Ava Davis', amount:415.00, status:'Successful', date:'May 25, 2025', method:'cards' }
-  ];
-  const MORE_TRANSACTIONS = [
-    { id:'785205', name:'James Wilson', amount:210.00, status:'Successful', date:'May 24, 2025', method:'bank' },
-    { id:'785204', name:'Sophia Martinez', amount:75.50, status:'Successful', date:'May 24, 2025', method:'cards' },
-    { id:'785203', name:'Lucas Anderson', amount:1840.00, status:'Successful', date:'May 23, 2025', method:'wallets' },
-    { id:'785202', name:'Mia Thompson', amount:132.20, status:'Failed', date:'May 23, 2025', method:'cards' },
-    { id:'785201', name:'Ethan Walker', amount:560.00, status:'Successful', date:'May 22, 2025', method:'cash' },
-    { id:'785200', name:'Isabella Clark', amount:990.00, status:'Pending', date:'May 22, 2025', method:'bank' },
-    { id:'785199', name:'Benjamin Lewis', amount:45.00, status:'Successful', date:'May 21, 2025', method:'wallets' },
-    { id:'785198', name:'Charlotte Hall', amount:2310.00, status:'Successful', date:'May 21, 2025', method:'cards' },
-    { id:'785197', name:'Henry Young', amount:310.75, status:'Failed', date:'May 20, 2025', method:'bank' },
-    { id:'785196', name:'Amelia King', amount:685.00, status:'Successful', date:'May 20, 2025', method:'wallets' },
-    { id:'785195', name:'Jack Wright', amount:128.40, status:'Successful', date:'May 19, 2025', method:'cards' },
-    { id:'785194', name:'Grace Scott', amount:950.00, status:'Pending', date:'May 19, 2025', method:'cash' },
-    { id:'785193', name:'Daniel Green', amount:275.00, status:'Successful', date:'May 18, 2025', method:'bank' },
-    { id:'785192', name:'Chloe Baker', amount:1120.00, status:'Successful', date:'May 18, 2025', method:'cards' },
-    { id:'785191', name:'Samuel Adams', amount:60.00, status:'Failed', date:'May 17, 2025', method:'wallets' }
-  ];
-  const ALL_TRANSACTIONS = TRANSACTIONS.concat(MORE_TRANSACTIONS);
-  const METHOD_LABELS = { cards:'Cards', bank:'Bank Transfer', wallets:'Digital Wallets', bnpl:'Buy Now, Pay Later', cash:'Cash' };
+  /* ---- aggregation ---- */
+  function getAvailableMonths(){
+    const keys = Array.from(new Set(ALL_TRANSACTIONS.map(function(t){ return isoMonthKey(t.isoDate); })));
+    keys.sort().reverse();
+    return keys;
+  }
+  function computeMonthAggregate(monthKey){
+    const rows = ALL_TRANSACTIONS.filter(function(t){ return isoMonthKey(t.isoDate) === monthKey; });
+    if (!rows.length) return null;
+    let revenue = 0, successCount = 0, failedCount = 0, pendingCount = 0, refundedCount = 0;
+    const byMethod = {};
+    const byStatus = {};
+    rows.forEach(function(t){
+      byStatus[t.status] = (byStatus[t.status] || 0) + 1;
+      byMethod[t.method] = (byMethod[t.method] || 0) + 1;
+      if (t.status === 'Successful'){ revenue += t.amount; successCount++; }
+      else if (t.status === 'Failed') failedCount++;
+      else if (t.status === 'Pending') pendingCount++;
+      else if (t.status === 'Refunded') refundedCount++;
+    });
+    const attempted = successCount + failedCount;
+    const authRate = attempted ? (successCount/attempted*100) : null;
+    const methodMix = METHOD_ORDER.filter(function(k){ return byMethod[k]; }).map(function(k){
+      return { key:k, label:METHOD_LABELS[k], color:METHOD_COLORS[k], pct: byMethod[k]/rows.length*100 };
+    });
+    const statusMix = STATUS_ORDER.filter(function(k){ return byStatus[k]; }).map(function(k){
+      return { key:k.toLowerCase(), label:STATUS_LABELS[k], color:STATUS_COLORS[k], pct: byStatus[k]/rows.length*100 };
+    });
+    return { count: rows.length, revenue, successCount, failedCount, pendingCount, refundedCount, authRate, methodMix, statusMix };
+  }
+  function buildDailySeries(monthKey){
+    const total = daysInMonth(monthKey);
+    const sums = new Array(total).fill(0);
+    ALL_TRANSACTIONS.forEach(function(t){
+      if (t.status !== 'Successful' || isoMonthKey(t.isoDate) !== monthKey) return;
+      const day = Number(t.isoDate.slice(8,10));
+      sums[day-1] += t.amount;
+    });
+    return sums.map(function(v,i){ return { label:String(i+1), value:v }; });
+  }
+  function buildLast7DaysSeries(){
+    const dates = ALL_TRANSACTIONS.map(function(t){ return t.isoDate; }).sort();
+    const lastIso = dates.length ? dates[dates.length-1] : new Date().toISOString().slice(0,10);
+    const end = new Date(lastIso + 'T00:00:00Z');
+    const days = [];
+    for (let i = 6; i >= 0; i--){
+      const d = new Date(end.getTime() - i*86400000);
+      days.push(d.toISOString().slice(0,10));
+    }
+    const sums = days.map(function(iso){
+      return ALL_TRANSACTIONS.reduce(function(sum,t){
+        return sum + (t.status === 'Successful' && t.isoDate === iso ? t.amount : 0);
+      }, 0);
+    });
+    return days.map(function(iso,i){
+      const [,m,d] = iso.split('-').map(Number);
+      return { label: MONTH_NAMES[m-1].slice(0,3)+' '+d, value: sums[i] };
+    });
+  }
 
   /* ============ HELPERS ============ */
   function fmtInt(n){ return Math.round(n).toLocaleString('en-GB'); }
@@ -1019,7 +1095,7 @@
     root.__closeDropdown = close;
     return { close: close };
   }
-  const ALL_DROPDOWN_IDS = ['dd-month','dd-country','dd-currency','dd-method','dd-status','dd-period','dd-statusperiod','dd-pay-method','dd-pay-status'];
+  const ALL_DROPDOWN_IDS = ['dd-month','dd-country','dd-currency','dd-method','dd-status','dd-period','dd-pay-method','dd-pay-status'];
   function closeAllDropdowns(except){
     ALL_DROPDOWN_IDS.forEach(function(id){
       const el = document.getElementById(id);
@@ -1184,18 +1260,18 @@
   }
 
   function buildMonthlyReportCsv(){
-    const d = MONTH_DATA[currentMonth];
+    const agg = currentMonth ? computeMonthAggregate(currentMonth) : null;
     let csv = '';
     csv += csvRow(['RustPay monthly report']);
-    csv += csvRow(['Month', d.label]);
+    csv += csvRow(['Month', currentMonth ? monthKeyToLabel(currentMonth) : 'No data']);
     csv += csvRow(['Currency', currentCurrency]);
     csv += csvRow(['Generated', new Date().toISOString().slice(0,10)]);
     csv += '\r\n';
     csv += csvRow(['Metric','Value']);
-    csv += csvRow(['Recovered via retry', fmtInt(d.recovered)]);
-    csv += csvRow(['Overall auth. rate', d.authRate.toFixed(2)+'%']);
-    csv += csvRow(['Transactions per month', fmtInt(d.tx)]);
-    csv += csvRow(['Revenue ('+currentCurrency+')', fmtMoneyWhole(d.revenue)]);
+    csv += csvRow(['Transactions', agg ? fmtInt(agg.count) : '0']);
+    csv += csvRow(['Success rate', agg && agg.authRate !== null ? agg.authRate.toFixed(2)+'%' : 'n/a']);
+    csv += csvRow(['Failed transactions', agg ? fmtInt(agg.failedCount) : '0']);
+    csv += csvRow(['Revenue ('+currentCurrency+')', agg ? fmtMoneyWhole(agg.revenue) : fmtMoneyWhole(0)]);
     csv += '\r\n';
     csv += csvRow(['ID','Customer','Amount','Currency','Status','Method','Date']);
     ALL_TRANSACTIONS.forEach(function(t){
@@ -1205,7 +1281,7 @@
   }
   function exportMonthlyReport(){
     const csv = buildMonthlyReportCsv();
-    const filename = 'rustpay-report-'+currentMonth+'.csv';
+    const filename = 'rustpay-report-'+(currentMonth || 'no-data')+'.csv';
     offerCsvDownload(filename, csv);
   }
   document.getElementById('btn-export').addEventListener('click', exportMonthlyReport);
@@ -1213,19 +1289,32 @@
 
   /* ============ KPI RENDER ============ */
   function deltaHtml(delta){
+    if (delta === null || delta === undefined){
+      return '<span class="kpi-delta-empty">No data for the prior month</span>';
+    }
     const up = delta >= 0;
     return '<span class="kpi-delta '+(up?'up':'down')+'">'+
       '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">'+
         (up ? '<path d="M12 19V5M6 11l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/>' : '<path d="M12 5v14M6 13l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>') +
       '</svg>'+Math.abs(delta).toFixed(1)+'%</span> <span class="kpi-delta-note">from last month</span>';
   }
+  function pctDelta(cur, prev){
+    if (prev === null || prev === undefined || prev === 0) return null;
+    return (cur - prev) / prev * 100;
+  }
   function renderKpis(){
-    const d = MONTH_DATA[currentMonth];
+    const cur = currentMonth ? computeMonthAggregate(currentMonth) : null;
+    const prev = currentMonth ? computeMonthAggregate(prevMonthKey(currentMonth)) : null;
+    const revenue = cur ? cur.revenue : 0;
+    const count = cur ? cur.count : 0;
+    const authRate = cur && cur.authRate !== null ? cur.authRate : null;
+    const failedCount = cur ? cur.failedCount : 0;
+    const prevAuthRate = prev && prev.authRate !== null ? prev.authRate : null;
     const cards = [
-      { label:'Recovered via retry', value: fmtInt(d.recovered), delta:d.recoveredDelta, bg:'var(--accent-soft)', fg:'var(--series-bank)', ic:'payments' },
-      { label:'Overall auth. rate', value: d.authRate.toFixed(2)+'%', delta:d.authDelta, bg:'var(--good-bg)', fg:'var(--good-text)', ic:'help' },
-      { label:'Transactions per month', value: fmtInt(d.tx), delta:d.txDelta, bg:'var(--warning-bg)', fg:'var(--series-wallets)', ic:'reconciliation' },
-      { label:'Revenue ('+currentCurrency+')', value: fmtMoneyWhole(d.revenue), delta:d.revenueDelta, bg:'var(--accent-soft)', fg:'var(--series-cards)', ic:'insights' }
+      { label:'Revenue ('+currentCurrency+')', value: fmtMoneyWhole(revenue), delta: cur ? pctDelta(revenue, prev ? prev.revenue : null) : null, bg:'var(--accent-soft)', fg:'var(--series-cards)', ic:'insights' },
+      { label:'Transactions', value: fmtInt(count), delta: cur ? pctDelta(count, prev ? prev.count : null) : null, bg:'var(--warning-bg)', fg:'var(--series-wallets)', ic:'reconciliation' },
+      { label:'Success rate', value: authRate !== null ? authRate.toFixed(1)+'%' : '—', delta: (authRate !== null) ? pctDelta(authRate, prevAuthRate) : null, bg:'var(--good-bg)', fg:'var(--good-text)', ic:'help' },
+      { label:'Failed transactions', value: fmtInt(failedCount), delta: cur ? pctDelta(failedCount, prev ? prev.failedCount : null) : null, bg:'var(--critical-bg)', fg:'var(--critical-text)', ic:'payments' }
     ];
     const iconSvgs = {
       payments:'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M2.5 10.2h19"/>',
@@ -1247,13 +1336,30 @@
 
   /* ============ LINE CHART ============ */
   const tooltip = document.getElementById('chart-tooltip');
+  function niceMax(v){
+    if (v <= 0) return 100;
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    const steps = [1,2,2.5,5,10];
+    for (const s of steps){ if (v <= s*mag) return s*mag; }
+    return 10*mag;
+  }
+  function fmtAxisVal(v){
+    if (v >= 1000000) return (v/1000000).toFixed(v % 1000000 === 0 ? 0 : 1)+'M';
+    if (v >= 1000) return (v/1000).toFixed(v % 1000 === 0 ? 0 : 1)+'K';
+    return String(Math.round(v));
+  }
   function renderLineChart(){
-    const data = currentPeriod === 'monthly' ? LINE_MONTHLY : LINE_WEEKLY;
     const wrap = document.getElementById('linechart-wrap');
+    if (!currentMonth){
+      wrap.innerHTML = '<div class="no-data-note">No transactions yet — add one to see this chart.</div>';
+      return;
+    }
+    const data = currentPeriod === 'monthly' ? buildDailySeries(currentMonth) : buildLast7DaysSeries();
     const W = 640, H = 280, padL = 46, padR = 14, padT = 14, padB = 26;
     const plotW = W - padL - padR, plotH = H - padT - padB;
-    const maxVal = currentPeriod === 'monthly' ? 1250000 : 250000;
-    const steps = currentPeriod === 'monthly' ? [0,250000,500000,750000,1000000,1250000] : [0,50000,100000,150000,200000,250000];
+    const dataMax = Math.max.apply(null, data.map(function(d){ return d.value; }));
+    const maxVal = niceMax(dataMax * 1.15);
+    const steps = [0, maxVal*0.25, maxVal*0.5, maxVal*0.75, maxVal];
 
     function x(i){ return padL + (i/(data.length-1)) * plotW; }
     function y(v){ return padT + plotH - (v/maxVal) * plotH; }
@@ -1262,7 +1368,7 @@
     steps.forEach(function(v){
       const yy = y(v);
       gridHtml += '<line class="grid-line" x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'"/>';
-      gridHtml += '<text class="axis-label" x="'+(padL-10)+'" y="'+(yy+3.5)+'" text-anchor="end">'+(v>=1000000?(v/1000000)+'M':v>=1000?(v/1000)+'K':v)+'</text>';
+      gridHtml += '<text class="axis-label" x="'+(padL-10)+'" y="'+(yy+3.5)+'" text-anchor="end">'+fmtAxisVal(v)+'</text>';
     });
     let xLabelsHtml = '';
     data.forEach(function(d,i){
@@ -1311,7 +1417,8 @@
         const scale = rect.width / W;
         tooltip.style.left = (rect.left - wrapRect.left + px*scale) + 'px';
         tooltip.style.top = (rect.top - wrapRect.top + py*scale) + 'px';
-        tooltip.innerHTML = fmtInt(d.value) + ' payments<div class="tt-sub">'+d.label+(currentPeriod==='monthly'?' 2025':' · May 2025')+'</div>';
+        const dayLabel = currentPeriod==='monthly' ? (monthKeyToLabel(currentMonth).split(' ')[0]+' '+d.label+', '+currentMonth.slice(0,4)) : d.label;
+        tooltip.innerHTML = fmtMoney(d.value) + ' successful<div class="tt-sub">'+dayLabel+'</div>';
         tooltip.classList.add('show');
       });
       hit.addEventListener('mouseleave', function(){
@@ -1375,13 +1482,27 @@
     });
   }
   function renderDonuts(){
-    buildDonut('donut-methods', METHOD_MIX, ['cards','bnpl','bank','wallets','cash','other'], '12.8M', 'Transactions');
-    const statusData = currentStatusPeriod === 'this' ? STATUS_MIX_THIS : STATUS_MIX_LAST;
-    buildDonut('donut-status', statusData, ['successful','failed','pending','refunded'], currentStatusPeriod==='this' ? '12.8M' : '11.9M', 'Transactions');
+    const agg = currentMonth ? computeMonthAggregate(currentMonth) : null;
+    const methodsEl = document.getElementById('donut-methods');
+    const statusEl = document.getElementById('donut-status');
+    if (!agg){
+      methodsEl.innerHTML = '<div class="no-data-note">No transactions yet — add one to see this breakdown.</div>';
+      statusEl.innerHTML = '<div class="no-data-note">No transactions yet — add one to see this breakdown.</div>';
+      return;
+    }
+    buildDonut('donut-methods', agg.methodMix, agg.methodMix.map(function(m){ return m.key; }), fmtInt(agg.count), 'Transactions');
+    buildDonut('donut-status', agg.statusMix, agg.statusMix.map(function(m){ return m.key; }), fmtInt(agg.count), 'Transactions');
+  }
+  function updatePeriodLabels(){
+    const label = currentMonth ? monthKeyToLabel(currentMonth) : 'the selected month';
+    ['chart-period-label','method-period-label','status-period-label'].forEach(function(id){
+      const el = document.getElementById(id);
+      if (el) el.textContent = 'In ' + label;
+    });
   }
 
   /* ============ TABLE ============ */
-  const PILL_CLASS = { Successful:'good', Failed:'critical', Pending:'warning' };
+  const PILL_CLASS = { Successful:'good', Failed:'critical', Pending:'warning', Refunded:'neutral' };
   function txRowHtml(t, showMethod){
     return '<tr>'+
       '<td class="muted-cell tnum">#'+t.id+'</td>'+
@@ -1396,13 +1517,13 @@
   let methodFilter = 'all';
   function renderTable(){
     const body = document.getElementById('tx-body');
-    const rows = TRANSACTIONS.filter(function(t){
+    const rows = ALL_TRANSACTIONS.filter(function(t){
       const okStatus = statusFilter === 'all' || t.status.toLowerCase() === statusFilter;
       const okMethod = methodFilter === 'all' || t.method === methodFilter;
       return okStatus && okMethod;
-    });
+    }).slice(0, 5);
     if (!rows.length){
-      body.innerHTML = '<tr class="empty-row"><td colspan="5">No transactions match these filters.</td></tr>';
+      body.innerHTML = '<tr class="empty-row"><td colspan="5">'+(ALL_TRANSACTIONS.length ? 'No transactions match these filters.' : 'No transactions yet — add one on the Payments page.')+'</td></tr>';
       return;
     }
     body.innerHTML = rows.map(function(t){ return txRowHtml(t, false); }).join('');
@@ -1420,7 +1541,7 @@
     document.getElementById('payments-tx-count').textContent =
       'Showing '+rows.length+' of '+ALL_TRANSACTIONS.length+' transactions';
     if (!rows.length){
-      body.innerHTML = '<tr class="empty-row"><td colspan="6">No transactions match these filters.</td></tr>';
+      body.innerHTML = '<tr class="empty-row"><td colspan="6">'+(ALL_TRANSACTIONS.length ? 'No transactions match these filters.' : 'No transactions yet — click "Add transaction" to create the first one.')+'</td></tr>';
       return;
     }
     body.innerHTML = rows.map(function(t){ return txRowHtml(t, true); }).join('');
@@ -1428,16 +1549,17 @@
 
   /* ============ DROPDOWN SETUP ============ */
   function setupAllDropdowns(){
-    setupDropdown('dd-month', MONTHS.map(function(m){ return { value:m, text: MONTH_DATA[m].label }; }), {
-      selected: currentMonth,
-      onChange: function(val){ currentMonth = val; renderKpis(); }
+    const months = getAvailableMonths();
+    setupDropdown('dd-month', months.length ? months.map(function(m){ return { value:m, text: monthKeyToLabel(m) }; }) : [{ value:'', text:'No data yet' }], {
+      selected: currentMonth || '',
+      onChange: function(val){ currentMonth = val; renderAll(); }
     });
     setupDropdown('dd-country', [
       { value:'gb', text:'United Kingdom' },{ value:'us', text:'United States' },{ value:'de', text:'Germany' },{ value:'in', text:'India' }
     ], { selected:'gb', labelPrefix:'Country: ', onChange: function(){} });
     setupDropdown('dd-currency', [
       { value:'GBP', text:'GBP' },{ value:'USD', text:'USD' },{ value:'EUR', text:'EUR' }
-    ], { selected:currentCurrency, labelPrefix:'Currency: ', onChange: function(val){ currentCurrency = val; renderKpis(); renderTable(); } });
+    ], { selected:currentCurrency, labelPrefix:'Currency: ', onChange: function(val){ currentCurrency = val; renderKpis(); renderTable(); renderPaymentsTable(); } });
     setupDropdown('dd-method', [
       { value:'all', text:'All methods' },{ value:'cards', text:'Cards' },{ value:'bank', text:'Bank Transfer' },{ value:'wallets', text:'Digital Wallets' },{ value:'cash', text:'Cash' }
     ], { selected:'all', onChange: function(val,found){
@@ -1446,7 +1568,7 @@
       renderTable();
     } });
     setupDropdown('dd-status', [
-      { value:'all', text:'All statuses' },{ value:'successful', text:'Successful' },{ value:'failed', text:'Failed' },{ value:'pending', text:'Pending' }
+      { value:'all', text:'All statuses' },{ value:'successful', text:'Successful' },{ value:'failed', text:'Failed' },{ value:'pending', text:'Pending' },{ value:'refunded', text:'Refunded' }
     ], { selected:'all', onChange: function(val,found){
       statusFilter = val;
       document.querySelector('#dd-status .dd-label').textContent = val==='all' ? 'Status' : found.text;
@@ -1455,9 +1577,6 @@
     setupDropdown('dd-period', [
       { value:'monthly', text:'Monthly' },{ value:'weekly', text:'Weekly' }
     ], { selected:currentPeriod, onChange: function(val){ currentPeriod = val; renderLineChart(); } });
-    setupDropdown('dd-statusperiod', [
-      { value:'this', text:'This month' },{ value:'last', text:'Last month' }
-    ], { selected:currentStatusPeriod, onChange: function(val){ currentStatusPeriod = val; renderDonuts(); } });
     setupDropdown('dd-pay-method', [
       { value:'all', text:'All methods' },{ value:'cards', text:'Cards' },{ value:'bank', text:'Bank Transfer' },{ value:'wallets', text:'Digital Wallets' },{ value:'cash', text:'Cash' }
     ], { selected:'all', onChange: function(val,found){
@@ -1466,7 +1585,7 @@
       renderPaymentsTable();
     } });
     setupDropdown('dd-pay-status', [
-      { value:'all', text:'All statuses' },{ value:'successful', text:'Successful' },{ value:'failed', text:'Failed' },{ value:'pending', text:'Pending' }
+      { value:'all', text:'All statuses' },{ value:'successful', text:'Successful' },{ value:'failed', text:'Failed' },{ value:'pending', text:'Pending' },{ value:'refunded', text:'Refunded' }
     ], { selected:'all', onChange: function(val,found){
       payStatusFilter = val;
       document.querySelector('#dd-pay-status .dd-label').textContent = val==='all' ? 'Status' : found.text;
@@ -1474,14 +1593,131 @@
     } });
   }
 
+  function renderAll(){
+    updatePeriodLabels();
+    renderKpis();
+    renderLineChart();
+    renderDonuts();
+    renderTable();
+    renderPaymentsTable();
+  }
+
+  /* ============ LIVE DATA LOADING ============ */
+  async function loadTransactions(){
+    try {
+      const res = await fetch('/api/transactions');
+      if (!res.ok) throw new Error('bad status');
+      const rows = await res.json();
+      ALL_TRANSACTIONS = rows.map(function(r){
+        const isoDate = String(r.txn_date).slice(0,10);
+        return {
+          id: String(r.id),
+          name: r.name,
+          amount: Number(r.amount),
+          status: r.status,
+          method: r.method,
+          isoDate: isoDate,
+          date: formatDisplayDate(isoDate)
+        };
+      });
+    } catch (e){
+      ALL_TRANSACTIONS = [];
+      showToast('Could not load live data — check your connection and try again.');
+    }
+    const months = getAvailableMonths();
+    currentMonth = months.length ? months[0] : null;
+    setupAllDropdowns();
+    renderAll();
+  }
+
+  /* ============ ADD TRANSACTION ============ */
+  const ADMIN_TOKEN_KEY = 'rustpay_admin_token';
+  function getAdminToken(promptIfMissing){
+    let token = null;
+    try { token = localStorage.getItem(ADMIN_TOKEN_KEY); } catch(e){}
+    if (!token && promptIfMissing){
+      token = window.prompt('Enter the admin token to add a transaction:');
+      if (token) { try { localStorage.setItem(ADMIN_TOKEN_KEY, token); } catch(e){} }
+    }
+    return token;
+  }
+  function openAddTxModal(){
+    document.getElementById('tx-form-error').textContent = '';
+    document.getElementById('tx-name').value = '';
+    document.getElementById('tx-amount').value = '';
+    document.getElementById('tx-status').value = 'Successful';
+    document.getElementById('tx-method').value = 'cards';
+    document.getElementById('tx-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('add-tx-backdrop').classList.add('show');
+    document.getElementById('tx-name').focus();
+  }
+  function closeAddTxModal(){
+    document.getElementById('add-tx-backdrop').classList.remove('show');
+  }
+  async function submitAddTx(){
+    const errEl = document.getElementById('tx-form-error');
+    errEl.textContent = '';
+    const name = document.getElementById('tx-name').value.trim();
+    const amount = Number(document.getElementById('tx-amount').value);
+    const status = document.getElementById('tx-status').value;
+    const method = document.getElementById('tx-method').value;
+    const date = document.getElementById('tx-date').value;
+    if (!name){ errEl.textContent = 'Customer name is required.'; return; }
+    if (!Number.isFinite(amount) || amount <= 0){ errEl.textContent = 'Enter a valid amount greater than 0.'; return; }
+    if (!date){ errEl.textContent = 'Pick a date.'; return; }
+
+    let token = getAdminToken(true);
+    if (!token){ errEl.textContent = 'An admin token is required to add a transaction.'; return; }
+
+    const submitBtn = document.getElementById('tx-submit');
+    submitBtn.disabled = true;
+    try {
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify({ name: name, amount: amount, status: status, method: method, date: date })
+      });
+      if (res.status === 401){
+        try { localStorage.removeItem(ADMIN_TOKEN_KEY); } catch(e){}
+        errEl.textContent = 'Incorrect admin token. Try again.';
+        return;
+      }
+      if (!res.ok){
+        const body = await res.json().catch(function(){ return {}; });
+        errEl.textContent = body.error || 'Could not save this transaction.';
+        return;
+      }
+      const saved = await res.json();
+      const isoDate = String(saved.txn_date).slice(0,10);
+      ALL_TRANSACTIONS.unshift({
+        id: String(saved.id), name: saved.name, amount: Number(saved.amount),
+        status: saved.status, method: saved.method, isoDate: isoDate, date: formatDisplayDate(isoDate)
+      });
+      ALL_TRANSACTIONS.sort(function(a,b){ return b.isoDate < a.isoDate ? -1 : b.isoDate > a.isoDate ? 1 : Number(b.id)-Number(a.id); });
+      const months = getAvailableMonths();
+      if (!currentMonth || !months.includes(currentMonth)) currentMonth = months[0];
+      setupAllDropdowns();
+      renderAll();
+      closeAddTxModal();
+      showToast('Transaction added and saved.');
+    } catch (e){
+      errEl.textContent = 'Network error — please try again.';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  }
+  document.getElementById('btn-add-tx').addEventListener('click', openAddTxModal);
+  document.getElementById('tx-cancel').addEventListener('click', closeAddTxModal);
+  document.getElementById('tx-submit').addEventListener('click', submitAddTx);
+  document.getElementById('add-tx-backdrop').addEventListener('click', function(e){
+    if (e.target.id === 'add-tx-backdrop') closeAddTxModal();
+  });
+
   /* ============ INIT ============ */
   renderNav();
   renderView();
-  renderKpis();
-  renderLineChart();
-  renderDonuts();
-  renderTable();
-  setupAllDropdowns();
+  document.getElementById('kpi-grid').innerHTML = '<div class="no-data-note">Loading live data…</div>';
+  loadTransactions();
 })();
 </script>
 </body>
